@@ -98,6 +98,18 @@
 
 /* GitHub theme component overrides */
 @layer components {
+  .bg-card, [data-theme] .bg-card {
+    background-color: #f6f8fa !important;
+  }
+  
+  .text-card-foreground, [data-theme] .text-card-foreground {
+    color: #1f2328 !important;
+  }
+  
+  .border, [data-theme] .border {
+    border-color: #d0d7de !important;
+  }
+  
   .github-card {
     background-color: #f6f8fa !important;
     color: #1f2328 !important;
