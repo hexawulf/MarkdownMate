@@ -37,7 +37,7 @@
   --chart-2: 26 127 55; /* #1A7F37 - GitHub green */
   --chart-3: 218 54 51; /* #DA3633 - GitHub red */
   --chart-4: 130 80 223; /* #8250DF - GitHub purple */
-  --chart-5: 191 135 0; /* #BF8700 - GitHub yellow/orange */
+  --chart-5: 101 109 118; /* #656D76 - GitHub muted gray */
 }
 
 .dark {
@@ -74,7 +74,7 @@
   --chart-2: 63 185 80; /* #3FB950 - GitHub dark green */
   --chart-3: 248 81 73; /* #F85149 - GitHub dark red */
   --chart-4: 139 148 255; /* #8B94FF - GitHub dark purple */
-  --chart-5: 255 191 0; /* #FFBF00 - GitHub dark yellow/orange */
+  --chart-5: 139 148 158; /* #8B949E - GitHub dark muted text */
 }
 
 @layer base {
