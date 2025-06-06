@@ -306,7 +306,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                         key={folder.id}
                         className="flex items-center space-x-3 p-3 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors"
                       >
-                        <Folder className="h-4 w-4 text-warning" />
+                        <Folder className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium text-sidebar-foreground">{folder.name}</span>
                       </div>
                     ))

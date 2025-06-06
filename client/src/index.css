@@ -100,7 +100,8 @@
   }
 }
 
-/* GitHub theme component overrides */
+/* GitHub theme component overrides -- REMOVED as they should be handled by Tailwind utilities and theme config */
+/*
 @layer components {
   .bg-card, [data-theme] .bg-card {
     background-color: #f6f8fa !important;
@@ -144,6 +145,7 @@
     color: #c9d1d9 !important;
   }
 }
+*/
 
 @layer components {
   .editor-cursor {
@@ -159,56 +161,13 @@
   }
 
   .prose-editor {
-    @apply prose prose-slate dark:prose-invert max-w-none;
+    /* Removed prose-slate to allow tailwind.config.ts typography to take effect */
+    @apply prose dark:prose-invert max-w-none;
   }
 
-  .prose-editor h1 {
-    @apply text-3xl font-bold text-slate-900 dark:text-white mb-6;
-  }
+  /* Removed specific .prose-editor h1, h2, ..., p, ul, ol, li, code, pre, blockquote, table, th, td styles */
+  /* These should now be handled by the typography settings in tailwind.config.ts */
 
-  .prose-editor h2 {
-    @apply text-2xl font-semibold text-slate-900 dark:text-white mb-4 mt-8;
-  }
-
-  .prose-editor h3 {
-    @apply text-xl font-semibold text-slate-900 dark:text-white mb-3 mt-6;
-  }
-
-  .prose-editor p {
-    @apply text-slate-700 dark:text-slate-300 mb-4 leading-relaxed;
-  }
-
-  .prose-editor ul, .prose-editor ol {
-    @apply space-y-2 mb-6;
-  }
-
-  .prose-editor li {
-    @apply text-slate-700 dark:text-slate-300;
-  }
-
-  .prose-editor code {
-    @apply bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-sm font-mono;
-  }
-
-  .prose-editor pre {
-    @apply bg-slate-100 dark:bg-slate-800 rounded-lg p-4 font-mono text-sm mb-6 overflow-x-auto;
-  }
-
-  .prose-editor blockquote {
-    @apply border-l-4 border-slate-300 dark:border-slate-600 pl-4 italic text-slate-600 dark:text-slate-400 mb-6;
-  }
-
-  .prose-editor table {
-    @apply w-full border-collapse border border-slate-300 dark:border-slate-600 mb-6;
-  }
-
-  .prose-editor th, .prose-editor td {
-    @apply border border-slate-300 dark:border-slate-600 px-3 py-2 text-left;
-  }
-
-  .prose-editor th {
-    @apply bg-slate-100 dark:bg-slate-800 font-semibold;
-  }
 }
 
 @keyframes blink {
