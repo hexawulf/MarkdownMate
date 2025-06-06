@@ -16,6 +16,19 @@
   Beautiful, fast, and collaborative markdown editing with a VSCode-like experience
 </p>
 
+<div align="center">
+  <img src="docs/screenshots/landing-page.png" alt="MarkdownMate Landing Page" width="800" />
+  <p><em>Modern landing page with clean design and professional layout</em></p>
+</div>
+
+<div align="center">
+  <a href="#features">Features</a> •
+  <a href="#installation--setup">Installation</a> •
+  <a href="#deployment">Deployment</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="https://hexawulf.github.io/MarkdownMate">Live Demo</a>
+</div>
+
 ---
 
 ## ✨ Features
@@ -71,6 +84,15 @@ cd MarkdownMate
 ### Install Dependencies
 ```bash
 npm install
+```
+
+### Generate Screenshots (Optional)
+```bash
+# Install Puppeteer for automated screenshot generation
+npm install --save-dev puppeteer
+
+# Generate landing page screenshot for README
+node scripts/generate-screenshots.js
 ```
 
 ### Start Development Server
