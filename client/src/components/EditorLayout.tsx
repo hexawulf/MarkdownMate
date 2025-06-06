@@ -102,12 +102,12 @@ export default function EditorLayout() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
+      <header className="bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden text-foreground hover:bg-muted"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             <Menu className="w-5 h-5" />

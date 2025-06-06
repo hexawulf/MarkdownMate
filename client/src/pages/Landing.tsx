@@ -25,49 +25,49 @@ export default function Landing() {
 
         {/* Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center">
+          <Card className="text-center border-border bg-card">
             <CardHeader>
               <Users className="w-8 h-8 text-accent mx-auto mb-2" />
-              <CardTitle>Real-time Collaboration</CardTitle>
+              <CardTitle className="text-card-foreground">Real-time Collaboration</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Work together in real-time with live cursors and presence indicators.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center border-border bg-card">
             <CardHeader>
               <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
-              <CardTitle>Rich Markdown</CardTitle>
+              <CardTitle className="text-card-foreground">Rich Markdown</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 GitHub Flavored Markdown with syntax highlighting and math support.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center border-border bg-card">
             <CardHeader>
-              <Zap className="w-8 h-8 text-warning mx-auto mb-2" />
-              <CardTitle>Monaco Editor</CardTitle>
+              <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
+              <CardTitle className="text-card-foreground">Monaco Editor</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 VSCode-like editing experience with intelligent autocomplete.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center border-border bg-card">
             <CardHeader>
               <Shield className="w-8 h-8 text-accent mx-auto mb-2" />
-              <CardTitle>Secure & Private</CardTitle>
+              <CardTitle className="text-card-foreground">Secure & Private</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground">
                 Your documents are secure with modern authentication and encryption.
               </CardDescription>
             </CardContent>
@@ -76,15 +76,15 @@ export default function Landing() {
 
         {/* CTA */}
         <div className="text-center">
-          <Card className="max-w-md mx-auto">
+          <Card className="max-w-md mx-auto border-border bg-card">
             <CardHeader>
-              <CardTitle>Get Started Today</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-card-foreground">Get Started Today</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Join thousands of teams already using MarkdownMate for their documentation needs.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleLogin} size="lg" className="w-full">
+              <Button onClick={handleLogin} size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                 Sign In to Continue
               </Button>
             </CardContent>
