@@ -195,10 +195,10 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(folders.id, id),
-          eq(folders.authorId, userId)
+          eq(folders.ownerId, userId)
         )
       );
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Collaboration operations
@@ -219,7 +219,7 @@ export class DatabaseStorage implements IStorage {
           eq(documentCollaborators.userId, userId)
         )
       );
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getDocumentCollaborators(documentId: number): Promise<(DocumentCollaborator & { user: User })[]> {
