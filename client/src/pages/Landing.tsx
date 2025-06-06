@@ -59,16 +59,7 @@ export default function Landing() {
                 </a>
               </div>
 
-              {/* Social Proof */}
-              <div className="mt-16">
-                <p className="text-sm text-gray-500 mb-6">Trusted by 10,000+ teams worldwide</p>
-                <div className="flex items-center justify-center space-x-8 opacity-60">
-                  <div className="text-lg font-semibold text-gray-400">Acme Corp</div>
-                  <div className="text-lg font-semibold text-gray-400">TechStart</div>
-                  <div className="text-lg font-semibold text-gray-400">InnovateX</div>
-                  <div className="text-lg font-semibold text-gray-400">DevTeam</div>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
