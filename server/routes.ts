@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   function broadcastToDocument(documentId: number, message: any, excludeWs?: WebSocket) {
     const sessions = documentSessions.get(documentId);
     if (sessions) {
-      for (const session of sessions) {
+      Array.from(sessions).forEach(session => {
         if (session.ws !== excludeWs && session.ws.readyState === WebSocket.OPEN) {
           try {
             session.ws.send(JSON.stringify(message));
@@ -342,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error('Failed to send WebSocket message:', error);
           }
         }
-      }
+      });
     }
   }
 

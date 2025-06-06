@@ -52,7 +52,7 @@ export const folders = pgTable("folders", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   authorId: varchar("author_id").notNull().references(() => users.id),
-  parentId: integer("parent_id").references(() => folders.id),
+  parentId: integer("parent_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

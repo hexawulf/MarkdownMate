@@ -182,11 +182,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createFolder(folder: InsertFolder): Promise<Folder> {
-    const [newFolder] = await db
+    const result = await db
       .insert(folders)
       .values(folder)
       .returning();
-    return newFolder;
+    return result[0];
   }
 
   async deleteFolder(id: number, userId: string): Promise<boolean> {
