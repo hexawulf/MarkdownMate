@@ -147,7 +147,7 @@ export class DatabaseStorage implements IStorage {
           eq(documents.authorId, userId)
         )
       );
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async searchDocuments(userId: string, query: string): Promise<Document[]> {

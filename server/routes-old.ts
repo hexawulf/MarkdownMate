@@ -3,22 +3,20 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { insertDocumentSchema, updateDocumentSchema, insertFolderSchema } from "@shared/schema";
+import { z } from "zod";
 
-// Development authentication middleware
-const devAuth = (req: any, res: any, next: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    req.user = {
-      claims: {
-        sub: 'dev-user-1',
-        email: 'developer@markdownmate.dev',
-        first_name: 'Demo',
-        last_name: 'User'
-      }
+interface AuthenticatedRequest extends Request {
+  user?: {
+    claims: {
+      sub: string;
+      email?: string;
+      first_name?: string;
+      last_name?: string;
+      profile_image_url?: string;
     };
-    return next();
-  }
-  return isAuthenticated(req, res, next);
-};
+  };
+}
 
 // WebSocket clients storage
 const wsClients = new Map<string, Set<WebSocket>>();
@@ -52,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes
-  app.get('/api/auth/user', async (req: any, res: Response) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
       if (process.env.NODE_ENV === 'development') {
         const user = await createDevUser();
@@ -74,8 +72,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Development authentication middleware
+  const devAuth = (req: any, res: any, next: any) => {
+    if (process.env.NODE_ENV === 'development') {
+      req.user = {
+        claims: {
+          sub: 'dev-user-1',
+          email: 'developer@markdownmate.dev',
+          first_name: 'Demo',
+          last_name: 'User'
+        }
+      };
+      return next();
+    }
+    return isAuthenticated(req, res, next);
+  };
+
   // Document routes
-  app.get('/api/documents', devAuth, async (req: any, res: Response) => {
+  app.get('/api/documents', devAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const folderId = req.query.folderId ? parseInt(req.query.folderId as string) : undefined;
@@ -87,9 +101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/documents/:id', devAuth, async (req: any, res: Response) => {
+  app.get('/api/documents/:id', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.claims.sub;
       const documentId = parseInt(req.params.id);
       const document = await storage.getDocument(documentId, userId);
       
@@ -104,54 +118,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/documents', devAuth, async (req: any, res: Response) => {
+  app.post('/api/documents', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { title, content, folderId } = req.body;
-      
-      const document = await storage.createDocument({
-        title,
-        content: content || '',
+      const userId = req.user!.claims.sub;
+      const documentData = insertDocumentSchema.parse({
+        ...req.body,
         authorId: userId,
-        folderId: folderId || null,
-        isPublic: false
       });
       
+      const document = await storage.createDocument(documentData);
       res.status(201).json(document);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid document data", errors: error.errors });
+      }
       console.error("Error creating document:", error);
       res.status(500).json({ message: "Failed to create document" });
     }
   });
 
-  app.patch('/api/documents/:id', devAuth, async (req: any, res: Response) => {
+  app.patch('/api/documents/:id', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.claims.sub;
       const documentId = parseInt(req.params.id);
-      const updates = req.body;
+      const updates = updateDocumentSchema.partial().parse(req.body);
       
       const document = await storage.updateDocument(documentId, userId, updates);
       
       if (!document) {
-        return res.status(404).json({ message: "Document not found" });
+        return res.status(404).json({ message: "Document not found or unauthorized" });
       }
+
+      // Broadcast update to WebSocket clients
+      broadcastToDocument(documentId, {
+        type: 'document-update',
+        documentId,
+        updates,
+        userId,
+      });
       
       res.json(document);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid update data", errors: error.errors });
+      }
       console.error("Error updating document:", error);
       res.status(500).json({ message: "Failed to update document" });
     }
   });
 
-  app.delete('/api/documents/:id', devAuth, async (req: any, res: Response) => {
+  app.delete('/api/documents/:id', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.claims.sub;
       const documentId = parseInt(req.params.id);
       
       const success = await storage.deleteDocument(documentId, userId);
       
       if (!success) {
-        return res.status(404).json({ message: "Document not found" });
+        return res.status(404).json({ message: "Document not found or unauthorized" });
       }
       
       res.status(204).send();
@@ -161,9 +185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/documents/search', devAuth, async (req: any, res: Response) => {
+  app.get('/api/documents/search', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.claims.sub;
       const query = req.query.q as string;
       
       if (!query) {
@@ -179,9 +203,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Folder routes
-  app.get('/api/folders', devAuth, async (req: any, res: Response) => {
+  app.get('/api/folders', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.claims.sub;
       const parentId = req.query.parentId ? parseInt(req.query.parentId as string) : undefined;
       const folders = await storage.getFolders(userId, parentId);
       res.json(folders);
@@ -191,33 +215,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/folders', devAuth, async (req: any, res: Response) => {
+  app.post('/api/folders', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { name, parentId } = req.body;
-      
-      const folder = await storage.createFolder({
-        name,
-        ownerId: userId,
-        parentId: parentId || null
+      const userId = req.user!.claims.sub;
+      const folderData = insertFolderSchema.parse({
+        ...req.body,
+        authorId: userId,
       });
       
+      const folder = await storage.createFolder(folderData);
       res.status(201).json(folder);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid folder data", errors: error.errors });
+      }
       console.error("Error creating folder:", error);
       res.status(500).json({ message: "Failed to create folder" });
     }
   });
 
-  app.delete('/api/folders/:id', devAuth, async (req: any, res: Response) => {
+  app.delete('/api/folders/:id', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.claims.sub;
       const folderId = parseInt(req.params.id);
       
       const success = await storage.deleteFolder(folderId, userId);
       
       if (!success) {
-        return res.status(404).json({ message: "Folder not found" });
+        return res.status(404).json({ message: "Folder not found or unauthorized" });
       }
       
       res.status(204).send();
@@ -229,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // WebSocket server setup
+  // WebSocket server for real-time collaboration
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   wss.on('connection', (ws: WebSocket, req) => {
@@ -240,20 +265,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const message = JSON.parse(data.toString());
         handleWebSocketMessage(ws, message);
       } catch (error) {
-        console.error('Invalid WebSocket message:', error);
+        console.error('Error parsing WebSocket message:', error);
       }
     });
 
     ws.on('close', () => {
-      console.log('WebSocket connection closed');
-      // Clean up user from all document sessions
-      for (const [documentId] of documentSessions.entries()) {
-        leaveDocument(ws, documentId);
+      // Remove client from all sessions
+      for (const [documentId, clients] of documentSessions.entries()) {
+        for (const client of clients) {
+          if (client.ws === ws) {
+            clients.delete(client);
+            broadcastToDocument(documentId, {
+              type: 'user-left',
+              userId: client.userId,
+            });
+            break;
+          }
+        }
+        if (clients.size === 0) {
+          documentSessions.delete(documentId);
+        }
       }
-    });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
     });
   });
 
@@ -271,8 +303,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       case 'text-change':
         broadcastTextChange(message.documentId, message.userId, message.change);
         break;
-      default:
-        console.log('Unknown message type:', message.type);
     }
   }
 
@@ -281,36 +311,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       documentSessions.set(documentId, new Set());
     }
     
-    const session = { ws, userId };
-    documentSessions.get(documentId)!.add(session);
-    
-    // Notify other users in the document
+    const clients = documentSessions.get(documentId)!;
+    clients.add({ ws, userId });
+
+    // Notify other clients about new user
     broadcastToDocument(documentId, {
       type: 'user-joined',
       userId,
-      userEmail: 'developer@markdownmate.dev',
-      userFirstName: 'Demo',
-      userLastName: 'User'
     }, ws);
   }
 
   function leaveDocument(ws: WebSocket, documentId: number) {
-    const sessions = documentSessions.get(documentId);
-    if (sessions) {
-      const sessionToRemove = Array.from(sessions).find(session => session.ws === ws);
-      if (sessionToRemove) {
-        sessions.delete(sessionToRemove);
-        
-        // Notify other users
-        broadcastToDocument(documentId, {
-          type: 'user-left',
-          userId: sessionToRemove.userId
-        }, ws);
-        
-        // Clean up empty sessions
-        if (sessions.size === 0) {
-          documentSessions.delete(documentId);
+    const clients = documentSessions.get(documentId);
+    if (clients) {
+      for (const client of clients) {
+        if (client.ws === ws) {
+          clients.delete(client);
+          broadcastToDocument(documentId, {
+            type: 'user-left',
+            userId: client.userId,
+          });
+          break;
         }
+      }
+      if (clients.size === 0) {
+        documentSessions.delete(documentId);
       }
     }
   }
@@ -319,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     broadcastToDocument(documentId, {
       type: 'cursor-update',
       userId,
-      cursor
+      cursor,
     });
   }
 
@@ -327,22 +352,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     broadcastToDocument(documentId, {
       type: 'text-change',
       userId,
-      change
+      change,
     });
   }
 
   function broadcastToDocument(documentId: number, message: any, excludeWs?: WebSocket) {
-    const sessions = documentSessions.get(documentId);
-    if (sessions) {
-      for (const session of sessions) {
-        if (session.ws !== excludeWs && session.ws.readyState === WebSocket.OPEN) {
-          try {
-            session.ws.send(JSON.stringify(message));
-          } catch (error) {
-            console.error('Failed to send WebSocket message:', error);
-          }
+    const clients = documentSessions.get(documentId);
+    if (clients) {
+      const messageStr = JSON.stringify(message);
+      clients.forEach(({ ws }) => {
+        if (ws !== excludeWs && ws.readyState === WebSocket.OPEN) {
+          ws.send(messageStr);
         }
-      }
+      });
     }
   }
 
