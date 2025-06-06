@@ -247,9 +247,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('close', () => {
       console.log('WebSocket connection closed');
       // Clean up user from all document sessions
-      for (const [documentId] of documentSessions.entries()) {
+      Array.from(documentSessions.entries()).forEach(([documentId]) => {
         leaveDocument(ws, documentId);
-      }
+      });
     });
 
     ws.on('error', (error) => {
