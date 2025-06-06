@@ -1,6 +1,11 @@
-const puppeteer = require('puppeteer');
-const fs = require('fs');
-const path = require('path');
+import puppeteer from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Replicate __dirname functionality in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function generateScreenshots() {
   const browser = await puppeteer.launch({
@@ -27,7 +32,7 @@ async function generateScreenshots() {
     });
 
     // Wait for fonts and images to load
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Ensure screenshots directory exists
     const screenshotsDir = path.join(__dirname, '..', 'docs', 'screenshots');
@@ -51,7 +56,7 @@ async function generateScreenshots() {
         timeout: 15000
       });
       
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       await page.screenshot({
         path: path.join(screenshotsDir, 'editor-view.png'),
@@ -73,7 +78,8 @@ async function generateScreenshots() {
 }
 
 // Run if called directly
-if (require.main === module) {
+// Simplified check for direct execution in ES modules
+if (process.argv[1] === __filename) {
   generateScreenshots().then(() => {
     console.log('Screenshot generation complete');
     process.exit(0);
@@ -83,4 +89,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = { generateScreenshots };
+// ES modules don't use module.exports, but we can keep the function export if needed for other potential ES module imports.
+export { generateScreenshots };
