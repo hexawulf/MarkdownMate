@@ -32,6 +32,12 @@
   --sidebar-accent-foreground: 31 35 40; /* #1F2328 - GitHub near black */
   --sidebar-border: 208 215 222; /* #D0D7DE - GitHub border gray */
   --sidebar-ring: 9 105 218; /* #0969DA - GitHub blue */
+
+  --chart-1: 9 105 218; /* #0969DA - GitHub blue */
+  --chart-2: 26 127 55; /* #1A7F37 - GitHub green */
+  --chart-3: 218 54 51; /* #DA3633 - GitHub red */
+  --chart-4: 130 80 223; /* #8250DF - GitHub purple */
+  --chart-5: 191 135 0; /* #BF8700 - GitHub yellow/orange */
 }
 
 .dark {
@@ -63,6 +69,12 @@
   --sidebar-accent-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
   --sidebar-border: 48 54 61; /* #30363D - GitHub dark border */
   --sidebar-ring: 88 166 255; /* #58A6FF - GitHub dark blue */
+
+  --chart-1: 88 166 255; /* #58A6FF - GitHub dark blue */
+  --chart-2: 63 185 80; /* #3FB950 - GitHub dark green */
+  --chart-3: 248 81 73; /* #F85149 - GitHub dark red */
+  --chart-4: 139 148 255; /* #8B94FF - GitHub dark purple */
+  --chart-5: 255 191 0; /* #FFBF00 - GitHub dark yellow/orange */
 }
 
 @layer base {
