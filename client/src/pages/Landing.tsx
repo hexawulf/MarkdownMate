@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, Zap, Shield } from "lucide-react";
 
 export default function Landing() {
@@ -25,65 +24,65 @@ export default function Landing() {
 
         {/* Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center github-card">
-            <CardHeader>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <div className="mb-4">
               <Users className="w-8 h-8 text-accent mx-auto mb-2" />
-              <CardTitle className="github-card-title font-semibold">Real-time Collaboration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-muted-foreground">
+              <h3 className="text-lg font-semibold text-foreground">Real-time Collaboration</h3>
+            </div>
+            <div>
+              <p className="text-muted-foreground">
                 Work together in real-time with live cursors and presence indicators.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
 
-          <Card className="text-center github-card">
-            <CardHeader>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <div className="mb-4">
               <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
-              <CardTitle className="github-card-title font-semibold">Rich Markdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-muted-foreground">
+              <h3 className="text-lg font-semibold text-foreground">Rich Markdown</h3>
+            </div>
+            <div>
+              <p className="text-muted-foreground">
                 GitHub Flavored Markdown with syntax highlighting and math support.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
 
-          <Card className="text-center github-card">
-            <CardHeader>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <div className="mb-4">
               <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
-              <CardTitle className="github-card-title font-semibold">Monaco Editor</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-muted-foreground">
+              <h3 className="text-lg font-semibold text-foreground">Monaco Editor</h3>
+            </div>
+            <div>
+              <p className="text-muted-foreground">
                 VSCode-like editing experience with intelligent autocomplete.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
 
-          <Card className="text-center github-card">
-            <CardHeader>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <div className="mb-4">
               <Shield className="w-8 h-8 text-accent mx-auto mb-2" />
-              <CardTitle className="github-card-title font-semibold">Secure & Private</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-muted-foreground">
+              <h3 className="text-lg font-semibold text-foreground">Secure & Private</h3>
+            </div>
+            <div>
+              <p className="text-muted-foreground">
                 Your documents are secure with modern authentication and encryption.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* CTA */}
         <div className="text-center">
-          <Card className="max-w-md mx-auto github-card">
-            <CardHeader>
-              <CardTitle className="github-card-title">Get Started Today</CardTitle>
-              <CardDescription className="text-muted-foreground">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 max-w-md mx-auto">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Get Started Today</h3>
+              <p className="text-muted-foreground">
                 Join thousands of teams already using MarkdownMate for their documentation needs.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               <Button 
                 onClick={handleLogin} 
                 size="lg" 
@@ -91,8 +90,8 @@ export default function Landing() {
               >
                 Sign In to Continue
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
