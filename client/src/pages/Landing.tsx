@@ -25,10 +25,10 @@ export default function Landing() {
 
         {/* Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center border-border bg-card">
+          <Card className="text-center github-card">
             <CardHeader>
               <Users className="w-8 h-8 text-accent mx-auto mb-2" />
-              <CardTitle className="text-card-foreground">Real-time Collaboration</CardTitle>
+              <CardTitle className="github-card-title font-semibold">Real-time Collaboration</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-muted-foreground">
@@ -37,10 +37,10 @@ export default function Landing() {
             </CardContent>
           </Card>
 
-          <Card className="text-center border-border bg-card">
+          <Card className="text-center github-card">
             <CardHeader>
               <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
-              <CardTitle className="text-card-foreground">Rich Markdown</CardTitle>
+              <CardTitle className="github-card-title font-semibold">Rich Markdown</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-muted-foreground">
@@ -49,10 +49,10 @@ export default function Landing() {
             </CardContent>
           </Card>
 
-          <Card className="text-center border-border bg-card">
+          <Card className="text-center github-card">
             <CardHeader>
               <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
-              <CardTitle className="text-card-foreground">Monaco Editor</CardTitle>
+              <CardTitle className="github-card-title font-semibold">Monaco Editor</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-muted-foreground">
@@ -61,10 +61,10 @@ export default function Landing() {
             </CardContent>
           </Card>
 
-          <Card className="text-center border-border bg-card">
+          <Card className="text-center github-card">
             <CardHeader>
               <Shield className="w-8 h-8 text-accent mx-auto mb-2" />
-              <CardTitle className="text-card-foreground">Secure & Private</CardTitle>
+              <CardTitle className="github-card-title font-semibold">Secure & Private</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-muted-foreground">
@@ -76,15 +76,19 @@ export default function Landing() {
 
         {/* CTA */}
         <div className="text-center">
-          <Card className="max-w-md mx-auto border-border bg-card">
+          <Card className="max-w-md mx-auto github-card">
             <CardHeader>
-              <CardTitle className="text-card-foreground">Get Started Today</CardTitle>
+              <CardTitle className="github-card-title">Get Started Today</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Join thousands of teams already using MarkdownMate for their documentation needs.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleLogin} size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button 
+                onClick={handleLogin} 
+                size="lg" 
+                className="w-full github-button-primary"
+              >
                 Sign In to Continue
               </Button>
             </CardContent>
