@@ -3,66 +3,66 @@
 @tailwind utilities;
 
 :root {
-  --background: 248 250 252; /* #F8FAFC - slate-50 */
-  --foreground: 15 23 42; /* #0F172A - slate-900 */
-  --muted: 241 245 249; /* #F1F5F9 - slate-100 */
-  --muted-foreground: 100 116 139; /* #64748B - slate-500 */
+  --background: 255 255 255; /* #FFFFFF - white */
+  --foreground: 31 35 40; /* #1F2328 - GitHub near black */
+  --muted: 246 248 250; /* #F6F8FA - GitHub light gray */
+  --muted-foreground: 101 109 118; /* #656D76 - GitHub muted gray */
   --popover: 255 255 255; /* #FFFFFF */
-  --popover-foreground: 15 23 42; /* #0F172A - slate-900 */
-  --card: 255 255 255; /* #FFFFFF */
-  --card-foreground: 15 23 42; /* #0F172A - slate-900 */
-  --border: 226 232 240; /* #E2E8F0 - slate-200 */
-  --input: 226 232 240; /* #E2E8F0 - slate-200 */
-  --primary: 37 99 235; /* #2563EB - blue-600 */
-  --primary-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --secondary: 241 245 249; /* #F1F5F9 - slate-100 */
-  --secondary-foreground: 30 41 59; /* #1E293B - slate-800 */
-  --accent: 16 185 129; /* #10B981 - emerald-500 */
+  --popover-foreground: 31 35 40; /* #1F2328 - GitHub near black */
+  --card: 246 248 250; /* #F6F8FA - GitHub light gray */
+  --card-foreground: 31 35 40; /* #1F2328 - GitHub near black */
+  --border: 208 215 222; /* #D0D7DE - GitHub border gray */
+  --input: 208 215 222; /* #D0D7DE - GitHub border gray */
+  --primary: 9 105 218; /* #0969DA - GitHub blue */
+  --primary-foreground: 255 255 255; /* #FFFFFF */
+  --secondary: 246 248 250; /* #F6F8FA - GitHub light gray */
+  --secondary-foreground: 101 109 118; /* #656D76 - GitHub muted gray */
+  --accent: 26 127 55; /* #1A7F37 - GitHub green */
   --accent-foreground: 255 255 255; /* #FFFFFF */
-  --destructive: 239 68 68; /* #EF4444 - red-500 */
+  --destructive: 218 54 51; /* #DA3633 - GitHub red */
   --destructive-foreground: 255 255 255; /* #FFFFFF */
-  --ring: 37 99 235; /* #2563EB - blue-600 */
+  --ring: 9 105 218; /* #0969DA - GitHub blue */
   --radius: 0.5rem;
 
   --sidebar-background: 255 255 255; /* #FFFFFF */
-  --sidebar-foreground: 15 23 42; /* #0F172A - slate-900 */
-  --sidebar-primary: 37 99 235; /* #2563EB - blue-600 */
-  --sidebar-primary-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --sidebar-accent: 241 245 249; /* #F1F5F9 - slate-100 */
-  --sidebar-accent-foreground: 30 41 59; /* #1E293B - slate-800 */
-  --sidebar-border: 226 232 240; /* #E2E8F0 - slate-200 */
-  --sidebar-ring: 37 99 235; /* #2563EB - blue-600 */
+  --sidebar-foreground: 31 35 40; /* #1F2328 - GitHub near black */
+  --sidebar-primary: 9 105 218; /* #0969DA - GitHub blue */
+  --sidebar-primary-foreground: 255 255 255; /* #FFFFFF */
+  --sidebar-accent: 246 248 250; /* #F6F8FA - GitHub light gray */
+  --sidebar-accent-foreground: 31 35 40; /* #1F2328 - GitHub near black */
+  --sidebar-border: 208 215 222; /* #D0D7DE - GitHub border gray */
+  --sidebar-ring: 9 105 218; /* #0969DA - GitHub blue */
 }
 
 .dark {
-  --background: 15 23 42; /* #0F172A - slate-900 */
-  --foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --muted: 30 41 59; /* #1E293B - slate-800 */
-  --muted-foreground: 148 163 184; /* #94A3B8 - slate-400 */
-  --popover: 30 41 59; /* #1E293B - slate-800 */
-  --popover-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --card: 30 41 59; /* #1E293B - slate-800 */
-  --card-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --border: 51 65 85; /* #334155 - slate-700 */
-  --input: 51 65 85; /* #334155 - slate-700 */
-  --primary: 37 99 235; /* #2563EB - blue-600 */
-  --primary-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --secondary: 51 65 85; /* #334155 - slate-700 */
-  --secondary-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --accent: 16 185 129; /* #10B981 - emerald-500 */
-  --accent-foreground: 255 255 255; /* #FFFFFF */
-  --destructive: 239 68 68; /* #EF4444 - red-500 */
-  --destructive-foreground: 255 255 255; /* #FFFFFF */
-  --ring: 37 99 235; /* #2563EB - blue-600 */
+  --background: 13 17 23; /* #0D1117 - GitHub dark background */
+  --foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
+  --muted: 22 27 34; /* #161B22 - GitHub dark muted */
+  --muted-foreground: 139 148 158; /* #8B949E - GitHub dark muted text */
+  --popover: 22 27 34; /* #161B22 - GitHub dark muted */
+  --popover-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
+  --card: 22 27 34; /* #161B22 - GitHub dark muted */
+  --card-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
+  --border: 48 54 61; /* #30363D - GitHub dark border */
+  --input: 48 54 61; /* #30363D - GitHub dark border */
+  --primary: 88 166 255; /* #58A6FF - GitHub dark blue */
+  --primary-foreground: 13 17 23; /* #0D1117 - GitHub dark background */
+  --secondary: 22 27 34; /* #161B22 - GitHub dark muted */
+  --secondary-foreground: 139 148 158; /* #8B949E - GitHub dark muted text */
+  --accent: 63 185 80; /* #3FB950 - GitHub dark green */
+  --accent-foreground: 13 17 23; /* #0D1117 - GitHub dark background */
+  --destructive: 248 81 73; /* #F85149 - GitHub dark red */
+  --destructive-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
+  --ring: 88 166 255; /* #58A6FF - GitHub dark blue */
 
-  --sidebar-background: 30 41 59; /* #1E293B - slate-800 */
-  --sidebar-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --sidebar-primary: 37 99 235; /* #2563EB - blue-600 */
-  --sidebar-primary-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --sidebar-accent: 51 65 85; /* #334155 - slate-700 */
-  --sidebar-accent-foreground: 248 250 252; /* #F8FAFC - slate-50 */
-  --sidebar-border: 51 65 85; /* #334155 - slate-700 */
-  --sidebar-ring: 37 99 235; /* #2563EB - blue-600 */
+  --sidebar-background: 22 27 34; /* #161B22 - GitHub dark muted */
+  --sidebar-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
+  --sidebar-primary: 88 166 255; /* #58A6FF - GitHub dark blue */
+  --sidebar-primary-foreground: 13 17 23; /* #0D1117 - GitHub dark background */
+  --sidebar-accent: 33 38 45; /* #21262D - GitHub dark accent */
+  --sidebar-accent-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
+  --sidebar-border: 48 54 61; /* #30363D - GitHub dark border */
+  --sidebar-ring: 88 166 255; /* #58A6FF - GitHub dark blue */
 }
 
 @layer base {

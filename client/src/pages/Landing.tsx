@@ -8,17 +8,17 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-white dark:bg-background">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center space-x-3 mb-6">
             <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <FileText className="w-6 h-6 text-white" />
+              <FileText className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white">MarkdownMate</h1>
+            <h1 className="text-4xl font-bold text-foreground">MarkdownMate</h1>
           </div>
-          <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             A powerful, real-time collaborative markdown editor for teams. Create, edit, and share beautiful documents together.
           </p>
         </div>
