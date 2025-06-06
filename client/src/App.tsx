@@ -15,10 +15,14 @@ function Router() {
   return (
     <Switch>
       {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/editor" component={Landing} />
+        </>
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/editor" component={Home} />
           <Route path="/document/:id" component={Home} />
         </>
       )}
