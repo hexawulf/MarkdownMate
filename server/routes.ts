@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const folder = await storage.createFolder({
         name,
-        ownerId: userId,
+        authorId: userId,
         parentId: parentId || null
       });
       
