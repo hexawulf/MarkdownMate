@@ -29,7 +29,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   try {
     await setupAuth(app);
   } catch (error) {
-    console.log("Auth setup failed, continuing in development mode");
+    console.error("[Auth] CRITICAL: Firebase Auth setup failed!", error);
+    console.warn("[Auth] Server is continuing with development mode auth behavior due to Firebase setup failure.");
   }
 
   // Create development user helper
@@ -52,7 +53,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes
-  app.get('/api/auth/user', async (req: any, res: Response) => {
+  app.get('/api/auth/user', devAuth, async (req: any, res: Response) => {
+    console.log('[/api/auth/user] Handler invoked. req.user:', JSON.stringify(req.user, null, 2));
     try {
       if (process.env.NODE_ENV === 'development') {
         const user = await createDevUser();
