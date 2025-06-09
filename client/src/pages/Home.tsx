@@ -1,15 +1,15 @@
 import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import EditorLayout from "@/components/EditorLayout";
 
 export default function Home() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { currentUser, loading } = useAuth();
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!loading && !currentUser) {
       toast({
         title: "Unauthorized",
         description: "You are logged out. Logging in again...",
@@ -20,9 +20,9 @@ export default function Home() {
       }, 500);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [currentUser, loading, toast]);
 
-  if (isLoading || !isAuthenticated) {
+  if (loading || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex items-center space-x-3">
