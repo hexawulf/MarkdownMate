@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext"; // Changed import
 import { useTheme } from "@/components/ThemeProvider";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DocumentSidebar from "@/components/DocumentSidebar";
@@ -26,9 +27,10 @@ import {
 type ViewMode = "split" | "editor" | "preview";
 
 export default function EditorLayout() {
-  const { user } = useAuth();
+  const { currentUser, loading: authLoading, signInWithGoogle, signOut } = useAuth(); // Updated destructuring
   const { theme, toggleTheme } = useTheme();
   const [location, setLocation] = useLocation();
+  const { toast } = useToast(); // Initialize toast
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [collaborationPanelOpen, setCollaborationPanelOpen] = useState(false);
@@ -61,8 +63,19 @@ export default function EditorLayout() {
     }
   }, [document, setCurrentDocument, setContent]);
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => { // Updated handleLogout
+    try {
+      await signOut();
+      // Optional: Redirect or show a message after sign-out
+      // e.g., setLocation('/'); // if you want to redirect to home
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({ // Add toast for sign-out error
+        title: "Sign-Out Failed",
+        description: "Could not sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewModeToggle = () => {
@@ -168,17 +181,42 @@ export default function EditorLayout() {
             <TooltipContent>Toggle Theme</TooltipContent>
           </Tooltip>
           
-          <div className="flex items-center space-x-2">
-            {user?.profileImageUrl && (
-              <img
-                src={user.profileImageUrl}
-                alt="Profile"
-                className="w-8 h-8 rounded-full border-2 border-border object-cover"
-              />
+          {/* User Auth Section */}
+          <div className="flex items-center space-x-3">
+            {authLoading ? (
+              <p className="text-sm text-foreground">Loading user...</p> // Or a spinner component
+            ) : currentUser ? (
+              <>
+                {currentUser.photoURL && (
+                  <img
+                    src={currentUser.photoURL}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full border-2 border-border object-cover"
+                  />
+                )}
+                {currentUser.displayName && (
+                  <span className="text-sm text-foreground hidden md:block">{currentUser.displayName}</span>
+                )}
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={async () => {
+                try {
+                  await signInWithGoogle();
+                } catch (error) {
+                  console.error("Error during Google sign-in:", error);
+                  toast({ // Add toast for sign-in error
+                    title: "Sign-In Failed",
+                    description: "Could not sign in with Google. Please try again.",
+                    variant: "destructive",
+                  });
+                }
+              }}>
+                Sign In with Google
+              </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              Sign Out
-            </Button>
           </div>
         </div>
       </header>
