@@ -1,9 +1,11 @@
-import React, { ReactNode } from 'react';
+import React, { createContext, ReactNode } from 'react';
 // import { User, onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 // import { auth } from '../firebaseConfig'; // Adjust path if necessary
 
 // export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-export const AuthContext = null; // Temporary placeholder
+// Temporary stub until Firebase auth issues are resolved.  We still
+// create a context so components depending on `AuthContext` don't crash.
+export const AuthContext = createContext(null as any);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   return <>{children}</>;
