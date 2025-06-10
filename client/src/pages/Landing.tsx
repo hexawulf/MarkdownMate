@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Github, Share2, Download } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const { signInWithGoogle } = useAuth();
 
   const handleGetStarted = () => {
     setLocation("/editor");
@@ -26,7 +28,7 @@ export default function Landing() {
             </div>
             <Button 
               variant="outline" 
-              onClick={handleGetStarted}
+              onClick={signInWithGoogle}
               className="border-border text-foreground hover:bg-muted"
             >
               Sign In
