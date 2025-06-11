@@ -1,7 +1,9 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
+import { db } from "../lib/db";
+import { users, documents, folders, documentCollaborators } from "../shared/schema";
+import { eq, desc, ilike, or, and, count, isNull } from "drizzle-orm";
 import { setupAuth, isAuthenticated } from "./firebaseAuth";
 
 // Development authentication middleware
@@ -11,8 +13,7 @@ const devAuth = (req: any, res: any, next: any) => {
       claims: {
         sub: 'dev-user-1',
         email: 'developer@markdownmate.dev',
-        first_name: 'Demo',
-        last_name: 'User'
+        displayName: 'Demo User'
       }
     };
     return next();
@@ -38,17 +39,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const devUser = {
       id: 'dev-user-1',
       email: 'developer@markdownmate.dev',
-      firstName: 'Demo',
-      lastName: 'User',
-      profileImageUrl: null
+      displayName: 'Demo User',
+      photoURL: null,
+      emailVerified: true
     };
     
     try {
-      await storage.upsertUser(devUser);
-      return await storage.getUser(devUser.id);
+      // Try to get existing user first
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, devUser.id))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return existingUser[0];
+      }
+
+      // Insert new user if doesn't exist
+      await db.insert(users).values(devUser);
+      
+      const user = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, devUser.id))
+        .limit(1);
+      
+      return user[0];
     } catch (error) {
       console.error("Failed to create dev user:", error);
       return devUser;
+    }
+  };
+
+  // Helper function to upsert Firebase user
+  const upsertFirebaseUser = async (claims: any) => {
+    const userData = {
+      id: claims.sub,
+      email: claims.email,
+      displayName: claims.name || claims.displayName || claims.email.split('@')[0],
+      photoURL: claims.picture || null,
+      emailVerified: claims.email_verified || false
+    };
+
+    try {
+      // Try to get existing user first
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userData.id))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        // Update existing user
+        await db
+          .update(users)
+          .set({
+            email: userData.email,
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            emailVerified: userData.emailVerified,
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, userData.id));
+      } else {
+        // Insert new user
+        await db.insert(users).values(userData);
+      }
+
+      const user = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userData.id))
+        .limit(1);
+
+      return user[0];
+    } catch (error) {
+      console.error("Failed to upsert Firebase user:", error);
+      throw error;
     }
   };
 
@@ -67,8 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = await upsertFirebaseUser(req.user.claims);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -81,8 +148,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const folderId = req.query.folderId ? parseInt(req.query.folderId as string) : undefined;
-      const documents = await storage.getDocuments(userId, folderId);
-      res.json(documents);
+      
+      let whereConditions = [eq(documents.authorId, userId)];
+
+      if (folderId !== undefined) {
+        if (folderId === null) {
+          whereConditions.push(isNull(documents.folderId));
+        } else {
+          whereConditions.push(eq(documents.folderId, folderId));
+        }
+      }
+
+      const result = await db
+        .select({
+          id: documents.id,
+          title: documents.title,
+          content: documents.content,
+          isPublic: documents.isPublic,
+          createdAt: documents.createdAt,
+          updatedAt: documents.updatedAt,
+          author: {
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email,
+          },
+          folder: {
+            id: folders.id,
+            name: folders.name,
+          }
+        })
+        .from(documents)
+        .leftJoin(users, eq(documents.authorId, users.id))
+        .leftJoin(folders, eq(documents.folderId, folders.id))
+        .where(and(...whereConditions))
+        .orderBy(desc(documents.updatedAt));
+
+      res.json(result);
     } catch (error) {
       console.error("Error fetching documents:", error);
       res.status(500).json({ message: "Failed to fetch documents" });
@@ -93,13 +194,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const documentId = parseInt(req.params.id);
-      const document = await storage.getDocument(documentId, userId);
       
-      if (!document) {
+      const document = await db
+        .select({
+          id: documents.id,
+          title: documents.title,
+          content: documents.content,
+          isPublic: documents.isPublic,
+          createdAt: documents.createdAt,
+          updatedAt: documents.updatedAt,
+          author: {
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email,
+          },
+          folder: {
+            id: folders.id,
+            name: folders.name,
+          }
+        })
+        .from(documents)
+        .leftJoin(users, eq(documents.authorId, users.id))
+        .leftJoin(folders, eq(documents.folderId, folders.id))
+        .where(
+          and(
+            eq(documents.id, documentId),
+            or(
+              eq(documents.authorId, userId),
+              eq(documents.isPublic, true)
+              // TODO: Add collaborator access check
+            )
+          )
+        )
+        .limit(1);
+      
+      if (document.length === 0) {
         return res.status(404).json({ message: "Document not found" });
       }
       
-      res.json(document);
+      res.json(document[0]);
     } catch (error) {
       console.error("Error fetching document:", error);
       res.status(500).json({ message: "Failed to fetch document" });
@@ -111,15 +244,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { title, content, folderId } = req.body;
       
-      const document = await storage.createDocument({
-        title,
-        content: content || '',
-        authorId: userId,
-        folderId: folderId || null,
-        isPublic: false
-      });
+      if (!title) {
+        return res.status(400).json({ message: "Title is required" });
+      }
+
+      // If folderId provided, verify it exists and user owns it
+      if (folderId) {
+        const folder = await db
+          .select()
+          .from(folders)
+          .where(
+            and(
+              eq(folders.id, folderId),
+              eq(folders.authorId, userId)
+            )
+          )
+          .limit(1);
+
+        if (folder.length === 0) {
+          return res.status(404).json({ message: "Folder not found" });
+        }
+      }
       
-      res.status(201).json(document);
+      const newDocument = await db
+        .insert(documents)
+        .values({
+          title,
+          content: content || '',
+          authorId: userId,
+          folderId: folderId || null,
+          isPublic: false
+        })
+        .returning();
+      
+      // Return the created document with author info
+      const documentWithDetails = await db
+        .select({
+          id: documents.id,
+          title: documents.title,
+          content: documents.content,
+          isPublic: documents.isPublic,
+          createdAt: documents.createdAt,
+          updatedAt: documents.updatedAt,
+          author: {
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email,
+          },
+          folder: {
+            id: folders.id,
+            name: folders.name,
+          }
+        })
+        .from(documents)
+        .leftJoin(users, eq(documents.authorId, users.id))
+        .leftJoin(folders, eq(documents.folderId, folders.id))
+        .where(eq(documents.id, newDocument[0].id))
+        .limit(1);
+      
+      res.status(201).json(documentWithDetails[0]);
     } catch (error) {
       console.error("Error creating document:", error);
       res.status(500).json({ message: "Failed to create document" });
@@ -132,13 +315,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentId = parseInt(req.params.id);
       const updates = req.body;
       
-      const document = await storage.updateDocument(documentId, userId, updates);
+      // Remove fields that shouldn't be updated directly
+      delete updates.id;
+      delete updates.authorId;
+      delete updates.createdAt;
       
-      if (!document) {
+      // Add updated timestamp
+      updates.updatedAt = new Date();
+      
+      const updatedDocument = await db
+        .update(documents)
+        .set(updates)
+        .where(
+          and(
+            eq(documents.id, documentId),
+            eq(documents.authorId, userId)
+          )
+        )
+        .returning();
+      
+      if (updatedDocument.length === 0) {
         return res.status(404).json({ message: "Document not found" });
       }
       
-      res.json(document);
+      // Return the updated document with author info
+      const documentWithDetails = await db
+        .select({
+          id: documents.id,
+          title: documents.title,
+          content: documents.content,
+          isPublic: documents.isPublic,
+          createdAt: documents.createdAt,
+          updatedAt: documents.updatedAt,
+          author: {
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email,
+          },
+          folder: {
+            id: folders.id,
+            name: folders.name,
+          }
+        })
+        .from(documents)
+        .leftJoin(users, eq(documents.authorId, users.id))
+        .leftJoin(folders, eq(documents.folderId, folders.id))
+        .where(eq(documents.id, documentId))
+        .limit(1);
+      
+      res.json(documentWithDetails[0]);
     } catch (error) {
       console.error("Error updating document:", error);
       res.status(500).json({ message: "Failed to update document" });
@@ -150,9 +375,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const documentId = parseInt(req.params.id);
       
-      const success = await storage.deleteDocument(documentId, userId);
+      const deletedDocument = await db
+        .delete(documents)
+        .where(
+          and(
+            eq(documents.id, documentId),
+            eq(documents.authorId, userId)
+          )
+        )
+        .returning();
       
-      if (!success) {
+      if (deletedDocument.length === 0) {
         return res.status(404).json({ message: "Document not found" });
       }
       
@@ -172,8 +405,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Search query is required" });
       }
       
-      const documents = await storage.searchDocuments(userId, query);
-      res.json(documents);
+      const searchResults = await db
+        .select({
+          id: documents.id,
+          title: documents.title,
+          content: documents.content,
+          isPublic: documents.isPublic,
+          createdAt: documents.createdAt,
+          updatedAt: documents.updatedAt,
+          author: {
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email,
+          },
+          folder: {
+            id: folders.id,
+            name: folders.name,
+          }
+        })
+        .from(documents)
+        .leftJoin(users, eq(documents.authorId, users.id))
+        .leftJoin(folders, eq(documents.folderId, folders.id))
+        .where(
+          and(
+            eq(documents.authorId, userId),
+            or(
+              ilike(documents.title, `%${query}%`),
+              ilike(documents.content, `%${query}%`)
+            )
+          )
+        )
+        .orderBy(desc(documents.updatedAt));
+      
+      res.json(searchResults);
     } catch (error) {
       console.error("Error searching documents:", error);
       res.status(500).json({ message: "Failed to search documents" });
@@ -185,8 +449,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const parentId = req.query.parentId ? parseInt(req.query.parentId as string) : undefined;
-      const folders = await storage.getFolders(userId, parentId);
-      res.json(folders);
+      
+      let whereConditions = [eq(folders.authorId, userId)];
+
+      if (parentId !== undefined) {
+        if (parentId === null) {
+          whereConditions.push(isNull(folders.parentId));
+        } else {
+          whereConditions.push(eq(folders.parentId, parentId));
+        }
+      }
+
+      const result = await db
+        .select({
+          id: folders.id,
+          name: folders.name,
+          parentId: folders.parentId,
+          createdAt: folders.createdAt,
+          author: {
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email,
+          },
+          documentCount: count(documents.id),
+        })
+        .from(folders)
+        .leftJoin(users, eq(folders.authorId, users.id))
+        .leftJoin(documents, eq(folders.id, documents.folderId))
+        .where(and(...whereConditions))
+        .groupBy(folders.id, users.id, users.displayName, users.email)
+        .orderBy(folders.name);
+      
+      res.json(result);
     } catch (error) {
       console.error("Error fetching folders:", error);
       res.status(500).json({ message: "Failed to fetch folders" });
@@ -198,13 +492,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { name, parentId } = req.body;
       
-      const folder = await storage.createFolder({
-        name,
-        authorId: userId,
-        parentId: parentId || null
-      });
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+
+      // If parentId provided, verify parent folder exists and user owns it
+      if (parentId) {
+        const parentFolder = await db
+          .select()
+          .from(folders)
+          .where(
+            and(
+              eq(folders.id, parentId),
+              eq(folders.authorId, userId)
+            )
+          )
+          .limit(1);
+
+        if (parentFolder.length === 0) {
+          return res.status(404).json({ message: "Parent folder not found" });
+        }
+      }
+
+      // Check for duplicate folder names in same parent
+      const whereConditions = [
+        eq(folders.name, name),
+        eq(folders.authorId, userId)
+      ];
+
+      if (parentId) {
+        whereConditions.push(eq(folders.parentId, parentId));
+      } else {
+        whereConditions.push(isNull(folders.parentId));
+      }
+
+      const existingFolder = await db
+        .select()
+        .from(folders)
+        .where(and(...whereConditions))
+        .limit(1);
+
+      if (existingFolder.length > 0) {
+        return res.status(409).json({ 
+          message: "Folder with this name already exists in this location" 
+        });
+      }
       
-      res.status(201).json(folder);
+      const newFolder = await db
+        .insert(folders)
+        .values({
+          name,
+          authorId: userId,
+          parentId: parentId || null
+        })
+        .returning();
+      
+      // Return the created folder with author info
+      const folderWithDetails = await db
+        .select({
+          id: folders.id,
+          name: folders.name,
+          parentId: folders.parentId,
+          createdAt: folders.createdAt,
+          author: {
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email,
+          },
+          documentCount: count(documents.id),
+        })
+        .from(folders)
+        .leftJoin(users, eq(folders.authorId, users.id))
+        .leftJoin(documents, eq(folders.id, documents.folderId))
+        .where(eq(folders.id, newFolder[0].id))
+        .groupBy(folders.id, users.id, users.displayName, users.email)
+        .limit(1);
+      
+      res.status(201).json(folderWithDetails[0]);
     } catch (error) {
       console.error("Error creating folder:", error);
       res.status(500).json({ message: "Failed to create folder" });
@@ -216,9 +580,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const folderId = parseInt(req.params.id);
       
-      const success = await storage.deleteFolder(folderId, userId);
+      // Check if folder has any documents or subfolders
+      const hasDocuments = await db
+        .select({ count: count() })
+        .from(documents)
+        .where(eq(documents.folderId, folderId));
+
+      const hasSubfolders = await db
+        .select({ count: count() })
+        .from(folders)
+        .where(eq(folders.parentId, folderId));
+
+      if (hasDocuments[0].count > 0 || hasSubfolders[0].count > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete folder that contains documents or subfolders" 
+        });
+      }
       
-      if (!success) {
+      const deletedFolder = await db
+        .delete(folders)
+        .where(
+          and(
+            eq(folders.id, folderId),
+            eq(folders.authorId, userId)
+          )
+        )
+        .returning();
+      
+      if (deletedFolder.length === 0) {
         return res.status(404).json({ message: "Folder not found" });
       }
       
@@ -244,7 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error('Invalid WebSocket message:', error);
       }
-    });
+    }); 
 
     ws.on('close', () => {
       console.log('WebSocket connection closed');
@@ -291,8 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       type: 'user-joined',
       userId,
       userEmail: 'developer@markdownmate.dev',
-      userFirstName: 'Demo',
-      userLastName: 'User'
+      displayName: 'Demo User'
     }, ws);
   }
 
