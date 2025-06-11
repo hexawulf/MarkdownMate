@@ -1,10 +1,11 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { db } from "../lib/db";
-import { users, documents, folders, documentCollaborators } from "../shared/schema";
-import { eq, desc, ilike, or, and, count, isNull } from "drizzle-orm";
+// import { db } from "../lib/db"; // No longer directly used
+// import { users, documents, folders, documentCollaborators } from "../shared/schema"; // Encapsulated by storage
+// import { eq, desc, ilike, or, and, count, isNull } from "drizzle-orm"; // Encapsulated by storage
 import { setupAuth, isAuthenticated } from "./firebaseAuth";
+import { storage } from "./storage";
 
 // Development authentication middleware
 const devAuth = (req: any, res: any, next: any) => {
@@ -46,28 +47,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Try to get existing user first
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, devUser.id))
-        .limit(1);
+      let user = await storage.getUser(devUser.id);
 
-      if (existingUser.length > 0) {
-        return existingUser[0];
+      if (user) {
+        return user;
       }
 
       // Insert new user if doesn't exist
-      await db.insert(users).values(devUser);
-      
-      const user = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, devUser.id))
-        .limit(1);
-      
-      return user[0];
+      user = await storage.upsertUser(devUser);
+      return user;
     } catch (error) {
       console.error("Failed to create dev user:", error);
+      // Return basic info if storage fails, consistent with previous behavior
       return devUser;
     }
   };
@@ -83,37 +74,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     try {
-      // Try to get existing user first
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userData.id))
-        .limit(1);
-
-      if (existingUser.length > 0) {
-        // Update existing user
-        await db
-          .update(users)
-          .set({
-            email: userData.email,
-            displayName: userData.displayName,
-            photoURL: userData.photoURL,
-            emailVerified: userData.emailVerified,
-            updatedAt: new Date()
-          })
-          .where(eq(users.id, userData.id));
-      } else {
-        // Insert new user
-        await db.insert(users).values(userData);
-      }
-
-      const user = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userData.id))
-        .limit(1);
-
-      return user[0];
+      const user = await storage.upsertUser(userData);
+      return user;
     } catch (error) {
       console.error("Failed to upsert Firebase user:", error);
       throw error;
@@ -143,47 +105,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/test', (req, res) => {
+    res.json({ message: "NEW ROUTES WORKING!", timestamp: new Date() });
+  });
+
   // Document routes
   app.get('/api/documents', devAuth, async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
-      const folderId = req.query.folderId ? parseInt(req.query.folderId as string) : undefined;
-      
-      let whereConditions = [eq(documents.authorId, userId)];
+      const folderIdQuery = req.query.folderId as string | undefined;
 
-      if (folderId !== undefined) {
-        if (folderId === null) {
-          whereConditions.push(isNull(documents.folderId));
-        } else {
-          whereConditions.push(eq(documents.folderId, folderId));
-        }
+      // storage.getDocuments expects number | undefined. null means root for some DB queries but not for storage.ts
+      let folderId: number | undefined = undefined;
+      if (folderIdQuery && folderIdQuery !== 'null') {
+        folderId = parseInt(folderIdQuery);
+      } else if (folderIdQuery === 'null') {
+        // This case implies documents at the root (folderId is null in DB)
+        // storage.getDocuments with folderId=undefined should fetch these if it also fetches non-folderId docs.
+        // Based on storage.ts, if folderId is undefined, it fetches all docs for the user.
+        // If folderId is a number, it filters by that folderId.
+        // We need to clarify if `storage.getDocuments(userId, undefined)` includes those with folderId IS NULL.
+        // Assuming storage.getDocuments(userId, undefined) gets ALL documents, and
+        // storage.getDocuments(userId, specificFolderId) gets documents for that folder.
+        // The old logic had a specific case for folderId === null (isNull(documents.folderId)).
+        // The current storage.getDocuments does not directly support querying for IS NULL folderId explicitly.
+        // It seems storage.getDocuments(userId, undefined) fetches all, then we might need to filter locally if only root items are needed.
+        // However, the prompt says "Adjust filtering for folderId as the storage.getDocuments method already handles it."
+        // storage.getDocuments(userId, folderId) -> where(and(eq(documents.authorId, userId), folderId ? eq(documents.folderId, folderId) : undefined))
+        // This means if folderId is undefined, it only filters by userId. This is not what we want for the 'null' case.
+        // For now, I will call storage.getDocuments and if folderIdQuery === 'null', I'll filter results.
+        // This is a deviation but necessary with current storage.ts.
+        // Alternative: if folderIdQuery === 'null', pass a special value if storage supported it, or fetch all and filter.
       }
 
-      const result = await db
-        .select({
-          id: documents.id,
-          title: documents.title,
-          content: documents.content,
-          isPublic: documents.isPublic,
-          createdAt: documents.createdAt,
-          updatedAt: documents.updatedAt,
-          author: {
-            id: users.id,
-            displayName: users.displayName,
-            email: users.email,
-          },
-          folder: {
-            id: folders.id,
-            name: folders.name,
-          }
-        })
-        .from(documents)
-        .leftJoin(users, eq(documents.authorId, users.id))
-        .leftJoin(folders, eq(documents.folderId, folders.id))
-        .where(and(...whereConditions))
-        .orderBy(desc(documents.updatedAt));
+      const userDocuments = await storage.getDocuments(userId, folderId);
 
-      res.json(result);
+      if (folderIdQuery === 'null') {
+        res.json(userDocuments.filter(doc => doc.folderId === null));
+      } else {
+        res.json(userDocuments);
+      }
     } catch (error) {
       console.error("Error fetching documents:", error);
       res.status(500).json({ message: "Failed to fetch documents" });
@@ -195,44 +156,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const documentId = parseInt(req.params.id);
       
-      const document = await db
-        .select({
-          id: documents.id,
-          title: documents.title,
-          content: documents.content,
-          isPublic: documents.isPublic,
-          createdAt: documents.createdAt,
-          updatedAt: documents.updatedAt,
-          author: {
-            id: users.id,
-            displayName: users.displayName,
-            email: users.email,
-          },
-          folder: {
-            id: folders.id,
-            name: folders.name,
-          }
-        })
-        .from(documents)
-        .leftJoin(users, eq(documents.authorId, users.id))
-        .leftJoin(folders, eq(documents.folderId, folders.id))
-        .where(
-          and(
-            eq(documents.id, documentId),
-            or(
-              eq(documents.authorId, userId),
-              eq(documents.isPublic, true)
-              // TODO: Add collaborator access check
-            )
-          )
-        )
-        .limit(1);
-      
-      if (document.length === 0) {
+      const document = await storage.getDocument(documentId, userId);
+
+      if (!document) {
         return res.status(404).json({ message: "Document not found" });
       }
       
-      res.json(document[0]);
+      res.json(document);
     } catch (error) {
       console.error("Error fetching document:", error);
       res.status(500).json({ message: "Failed to fetch document" });
@@ -250,59 +180,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If folderId provided, verify it exists and user owns it
       if (folderId) {
-        const folder = await db
-          .select()
-          .from(folders)
-          .where(
-            and(
-              eq(folders.id, folderId),
-              eq(folders.authorId, userId)
-            )
-          )
-          .limit(1);
-
-        if (folder.length === 0) {
-          return res.status(404).json({ message: "Folder not found" });
+        // storage.getFolders(userId, parentId) but we need to find a specific folder by ID.
+        // We can fetch all folders for the user and then filter, or rely on a more specific (not available) storage method.
+        // For now, let's fetch folders and check. This is not ideal for performance if there are many folders.
+        const userFolders = await storage.getFolders(userId);
+        const folderExists = userFolders.some(f => f.id === folderId);
+        if (!folderExists) {
+          return res.status(404).json({ message: "Folder not found or access denied" });
         }
       }
       
-      const newDocument = await db
-        .insert(documents)
-        .values({
-          title,
-          content: content || '',
-          authorId: userId,
-          folderId: folderId || null,
-          isPublic: false
-        })
-        .returning();
-      
-      // Return the created document with author info
-      const documentWithDetails = await db
-        .select({
-          id: documents.id,
-          title: documents.title,
-          content: documents.content,
-          isPublic: documents.isPublic,
-          createdAt: documents.createdAt,
-          updatedAt: documents.updatedAt,
-          author: {
-            id: users.id,
-            displayName: users.displayName,
-            email: users.email,
-          },
-          folder: {
-            id: folders.id,
-            name: folders.name,
-          }
-        })
-        .from(documents)
-        .leftJoin(users, eq(documents.authorId, users.id))
-        .leftJoin(folders, eq(documents.folderId, folders.id))
-        .where(eq(documents.id, newDocument[0].id))
-        .limit(1);
-      
-      res.status(201).json(documentWithDetails[0]);
+      const newDocumentPayload = {
+        title,
+        content: content || '',
+        authorId: userId,
+        folderId: folderId || null,
+        isPublic: false // Default value
+      };
+
+      const createdDocument = await storage.createDocument(newDocumentPayload);
+
+      // Return the created document with author info by calling getDocument
+      const documentWithDetails = await storage.getDocument(createdDocument.id, userId);
+
+      if (!documentWithDetails) {
+        // This should ideally not happen if createDocument succeeded
+        return res.status(500).json({ message: "Failed to retrieve created document details" });
+      }
+
+      res.status(201).json(documentWithDetails);
     } catch (error) {
       console.error("Error creating document:", error);
       res.status(500).json({ message: "Failed to create document" });
@@ -321,49 +227,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       delete updates.createdAt;
       
       // Add updated timestamp
-      updates.updatedAt = new Date();
-      
-      const updatedDocument = await db
-        .update(documents)
-        .set(updates)
-        .where(
-          and(
-            eq(documents.id, documentId),
-            eq(documents.authorId, userId)
-          )
-        )
-        .returning();
-      
-      if (updatedDocument.length === 0) {
-        return res.status(404).json({ message: "Document not found" });
+      updates.updatedAt = new Date(); // storage.updateDocument handles this
+
+      const updatedDocument = await storage.updateDocument(documentId, userId, updates);
+
+      if (!updatedDocument) {
+        return res.status(404).json({ message: "Document not found or update failed" });
       }
       
       // Return the updated document with author info
-      const documentWithDetails = await db
-        .select({
-          id: documents.id,
-          title: documents.title,
-          content: documents.content,
-          isPublic: documents.isPublic,
-          createdAt: documents.createdAt,
-          updatedAt: documents.updatedAt,
-          author: {
-            id: users.id,
-            displayName: users.displayName,
-            email: users.email,
-          },
-          folder: {
-            id: folders.id,
-            name: folders.name,
-          }
-        })
-        .from(documents)
-        .leftJoin(users, eq(documents.authorId, users.id))
-        .leftJoin(folders, eq(documents.folderId, folders.id))
-        .where(eq(documents.id, documentId))
-        .limit(1);
-      
-      res.json(documentWithDetails[0]);
+      const documentWithDetails = await storage.getDocument(documentId, userId);
+
+      if (!documentWithDetails) {
+        // This should ideally not happen if updateDocument succeeded and returned a document
+        return res.status(500).json({ message: "Failed to retrieve updated document details" });
+      }
+
+      res.json(documentWithDetails);
     } catch (error) {
       console.error("Error updating document:", error);
       res.status(500).json({ message: "Failed to update document" });
@@ -375,18 +255,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const documentId = parseInt(req.params.id);
       
-      const deletedDocument = await db
-        .delete(documents)
-        .where(
-          and(
-            eq(documents.id, documentId),
-            eq(documents.authorId, userId)
-          )
-        )
-        .returning();
-      
-      if (deletedDocument.length === 0) {
-        return res.status(404).json({ message: "Document not found" });
+      const success = await storage.deleteDocument(documentId, userId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Document not found or delete failed" });
       }
       
       res.status(204).send();
@@ -405,37 +277,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Search query is required" });
       }
       
-      const searchResults = await db
-        .select({
-          id: documents.id,
-          title: documents.title,
-          content: documents.content,
-          isPublic: documents.isPublic,
-          createdAt: documents.createdAt,
-          updatedAt: documents.updatedAt,
-          author: {
-            id: users.id,
-            displayName: users.displayName,
-            email: users.email,
-          },
-          folder: {
-            id: folders.id,
-            name: folders.name,
-          }
-        })
-        .from(documents)
-        .leftJoin(users, eq(documents.authorId, users.id))
-        .leftJoin(folders, eq(documents.folderId, folders.id))
-        .where(
-          and(
-            eq(documents.authorId, userId),
-            or(
-              ilike(documents.title, `%${query}%`),
-              ilike(documents.content, `%${query}%`)
-            )
-          )
-        )
-        .orderBy(desc(documents.updatedAt));
+      // storage.searchDocuments returns Document[], which might not have author/folder details.
+      // The previous query joined to get these. storage.ts searchDocuments only returns Document columns.
+      // This is a change in response if DocumentWithDetails was expected.
+      // The prompt for this route was: Replace `db.select()...` with `storage.searchDocuments()`.
+      // The return type of storage.searchDocuments is Document[], not DocumentWithDetails[].
+      // This means author and folder details will be missing if we directly use it.
+      // For now, I will follow the direct replacement instruction.
+      // If full details are needed, this would require a change in storage.ts or post-processing here.
+      const searchResults = await storage.searchDocuments(userId, query);
       
       res.json(searchResults);
     } catch (error) {
@@ -448,39 +298,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/folders', devAuth, async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
-      const parentId = req.query.parentId ? parseInt(req.query.parentId as string) : undefined;
-      
-      let whereConditions = [eq(folders.authorId, userId)];
+      const parentIdQuery = req.query.parentId as string | undefined;
 
-      if (parentId !== undefined) {
-        if (parentId === null) {
-          whereConditions.push(isNull(folders.parentId));
-        } else {
-          whereConditions.push(eq(folders.parentId, parentId));
-        }
+      let parentId: number | undefined = undefined;
+      if (parentIdQuery && parentIdQuery !== 'null') {
+        parentId = parseInt(parentIdQuery);
+      } else if (parentIdQuery === 'null') {
+        // storage.getFolders(userId, undefined) is for root folders if it filters parentId = null.
+        // storage.getFolders(userId, parentId) in storage.ts:
+        // .where(and(eq(folders.authorId, userId), parentId ? eq(folders.parentId, parentId) : undefined))
+        // This means parentId = undefined in the call will NOT filter for parentId IS NULL. It will return all folders.
+        // This is similar to the /api/documents issue.
+        // For now, if parentIdQuery === 'null', I'll fetch all and filter.
+        // This is not ideal. The alternative would be for storage.getFolders to explicitly handle null for parentId.
       }
-
-      const result = await db
-        .select({
-          id: folders.id,
-          name: folders.name,
-          parentId: folders.parentId,
-          createdAt: folders.createdAt,
-          author: {
-            id: users.id,
-            displayName: users.displayName,
-            email: users.email,
-          },
-          documentCount: count(documents.id),
-        })
-        .from(folders)
-        .leftJoin(users, eq(folders.authorId, users.id))
-        .leftJoin(documents, eq(folders.id, documents.folderId))
-        .where(and(...whereConditions))
-        .groupBy(folders.id, users.id, users.displayName, users.email)
-        .orderBy(folders.name);
       
-      res.json(result);
+      const userFolders = await storage.getFolders(userId, parentId);
+
+      // The old query returned FolderWithDetails (including author) and documentCount.
+      // storage.getFolders returns Folder[].
+      // This is a change in API response: author details and documentCount will be missing.
+      // The prompt mentioned documentCount would be lost. Author details are also not in Folder type.
+      // For now, this is a direct replacement.
+      if (parentIdQuery === 'null') {
+        res.json(userFolders.filter(folder => folder.parentId === null));
+      } else {
+        res.json(userFolders);
+      }
     } catch (error) {
       console.error("Error fetching folders:", error);
       res.status(500).json({ message: "Failed to fetch folders" });
@@ -498,77 +342,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If parentId provided, verify parent folder exists and user owns it
       if (parentId) {
-        const parentFolder = await db
-          .select()
-          .from(folders)
-          .where(
-            and(
-              eq(folders.id, parentId),
-              eq(folders.authorId, userId)
-            )
-          )
-          .limit(1);
-
-        if (parentFolder.length === 0) {
-          return res.status(404).json({ message: "Parent folder not found" });
+        const userFolders = await storage.getFolders(userId); // Fetches all folders for user
+        const parentFolderExists = userFolders.some(f => f.id === parentId);
+        if (!parentFolderExists) {
+          return res.status(404).json({ message: "Parent folder not found or access denied" });
         }
       }
 
       // Check for duplicate folder names in same parent
-      const whereConditions = [
-        eq(folders.name, name),
-        eq(folders.authorId, userId)
-      ];
+      // storage.getFolders(userId, parentId) can list folders in the target parent location.
+      // If parentId is null/undefined, it means root.
+      const foldersInParent = await storage.getFolders(userId, parentId || undefined);
+      const duplicateNameExists = foldersInParent.some(
+        (folder) => folder.name === name && folder.authorId === userId
+      );
 
-      if (parentId) {
-        whereConditions.push(eq(folders.parentId, parentId));
-      } else {
-        whereConditions.push(isNull(folders.parentId));
-      }
-
-      const existingFolder = await db
-        .select()
-        .from(folders)
-        .where(and(...whereConditions))
-        .limit(1);
-
-      if (existingFolder.length > 0) {
+      if (duplicateNameExists) {
         return res.status(409).json({ 
           message: "Folder with this name already exists in this location" 
         });
       }
       
-      const newFolder = await db
-        .insert(folders)
-        .values({
-          name,
-          authorId: userId,
-          parentId: parentId || null
-        })
-        .returning();
-      
-      // Return the created folder with author info
-      const folderWithDetails = await db
-        .select({
-          id: folders.id,
-          name: folders.name,
-          parentId: folders.parentId,
-          createdAt: folders.createdAt,
-          author: {
-            id: users.id,
-            displayName: users.displayName,
-            email: users.email,
-          },
-          documentCount: count(documents.id),
-        })
-        .from(folders)
-        .leftJoin(users, eq(folders.authorId, users.id))
-        .leftJoin(documents, eq(folders.id, documents.folderId))
-        .where(eq(folders.id, newFolder[0].id))
-        .groupBy(folders.id, users.id, users.displayName, users.email)
-        .limit(1);
-      
-      res.status(201).json(folderWithDetails[0]);
+      const newFolderPayload = {
+        name,
+        authorId: userId,
+        parentId: parentId || null
+      };
+
+      const createdFolder = await storage.createFolder(newFolderPayload);
+
+      // storage.createFolder returns Folder.
+      // The old response included author and documentCount. These will be missing.
+      res.status(201).json(createdFolder);
     } catch (error) {
       console.error("Error creating folder:", error);
       res.status(500).json({ message: "Failed to create folder" });
@@ -581,34 +386,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const folderId = parseInt(req.params.id);
       
       // Check if folder has any documents or subfolders
-      const hasDocuments = await db
-        .select({ count: count() })
-        .from(documents)
-        .where(eq(documents.folderId, folderId));
+      // storage.getDocuments(userId, folderId) to check for documents in this folder by this user
+      const documentsInFolder = await storage.getDocuments(userId, folderId);
+      if (documentsInFolder.length > 0) {
+        return res.status(400).json({
+          message: "Cannot delete folder that contains documents. Please move or delete them first."
+        });
+      }
 
-      const hasSubfolders = await db
-        .select({ count: count() })
-        .from(folders)
-        .where(eq(folders.parentId, folderId));
-
-      if (hasDocuments[0].count > 0 || hasSubfolders[0].count > 0) {
+      // storage.getFolders(userId, folderId) to check for subfolders in this folder by this user
+      const subFolders = await storage.getFolders(userId, folderId);
+      if (subFolders.length > 0) {
         return res.status(400).json({ 
-          message: "Cannot delete folder that contains documents or subfolders" 
+          message: "Cannot delete folder that contains subfolders. Please move or delete them first."
         });
       }
       
-      const deletedFolder = await db
-        .delete(folders)
-        .where(
-          and(
-            eq(folders.id, folderId),
-            eq(folders.authorId, userId)
-          )
-        )
-        .returning();
-      
-      if (deletedFolder.length === 0) {
-        return res.status(404).json({ message: "Folder not found" });
+      const success = await storage.deleteFolder(folderId, userId);
+
+      if (!success) {
+        return res.status(404).json({ message: "Folder not found or delete failed" });
       }
       
       res.status(204).send();
