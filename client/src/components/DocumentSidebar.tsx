@@ -68,6 +68,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
+        setCreateDocumentOpen(false);
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -101,6 +102,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
+        setCreateFolderOpen(false);
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
