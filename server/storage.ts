@@ -195,7 +195,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(folders.id, id),
-          eq(folders.ownerId, userId)
+          eq(folders.authorId, userId)
         )
       );
     return (result.rowCount ?? 0) > 0;
