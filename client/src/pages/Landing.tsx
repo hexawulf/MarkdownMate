@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Github, Share2, Download } from "lucide-react";
 import { useLocation } from "wouter";
@@ -5,7 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, currentUser, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && currentUser) {
+      setLocation("/editor", { replace: true });
+    }
+  }, [currentUser, loading, setLocation]);
 
   const handleGetStarted = () => {
     setLocation("/editor");
