@@ -18,7 +18,14 @@ export function setupAuth(_app: Express) {
   }
 }
 
-function getTokenFromRequest(req: any): string | undefined {
+/**
+ * Extracts a Firebase authentication token from an Express request.
+ * It checks both the 'Authorization' header (Bearer token) and cookies for a 'token' field.
+ *
+ * @param req The Express request object.
+ * @returns The token string if found, otherwise undefined.
+ */
+export function getTokenFromRequest(req: any): string | undefined {
   console.log('[Auth] Attempting to get token from request...');
   const authHeader = req.headers['authorization'];
   if (authHeader && authHeader.startsWith('Bearer ')) {

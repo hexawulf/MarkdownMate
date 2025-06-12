@@ -9,8 +9,18 @@ export default function Landing() {
   const { signInWithGoogle, currentUser, loading } = useAuth();
 
   useEffect(() => {
+    // This effect hook handles automatic redirection to the external editor
+    // (https://markdown.piapps.dev/editor) if a user is already logged in
+    // and the authentication state is no longer loading.
+    // It uses window.location.href for external redirection.
+    // A try-catch block is included to log any potential errors during redirection.
     if (!loading && currentUser) {
-      setLocation("/editor", { replace: true });
+      try {
+        console.log("Redirecting to external editor as user is logged in.");
+        window.location.href = "https://markdown.piapps.dev/editor";
+      } catch (error) {
+        console.error("Failed to redirect to external editor:", error);
+      }
     }
   }, [currentUser, loading, setLocation]);
 

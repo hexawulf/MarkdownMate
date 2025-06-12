@@ -4,7 +4,8 @@ import { WebSocketServer, WebSocket } from "ws";
 // import { db } from "../lib/db"; // No longer directly used
 // import { users, documents, folders, documentCollaborators } from "../shared/schema"; // Encapsulated by storage
 // import { eq, desc, ilike, or, and, count, isNull } from "drizzle-orm"; // Encapsulated by storage
-import { setupAuth, isAuthenticated } from "./firebaseAuth";
+import { getAuth } from "firebase-admin/auth";
+import { setupAuth, isAuthenticated, getTokenFromRequest } from "./firebaseAuth";
 import { storage } from "./storage";
 
 // Development authentication middleware
@@ -34,6 +35,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error("[Auth] CRITICAL: Firebase Auth setup failed!", error);
     console.warn("[Auth] Server is continuing with development mode auth behavior due to Firebase setup failure.");
   }
+
+  // Server-side fallback redirect for authenticated users.
+  // This handler checks if a user accessing the root path ('/') is already authenticated.
+  // If authenticated, it redirects them to the external editor.
+  // This acts as a fallback for client-side redirection and ensures users with valid sessions
+  // are taken directly to the editor experience.
+  // This route must be registered *before* any static file serving middleware for the root path
+  // or catch-all SPA handlers, to ensure it's processed first for the '/' route.
+  app.get('/', async (req, res, next) => {
+    // Note: In development, you might want to see the landing page even if authenticated.
+    // To disable this redirect during development, you could uncomment the next line:
+    // if (process.env.NODE_ENV === 'development') { return next(); }
+
+    // Attempt to retrieve the authentication token from the request.
+    const token = getTokenFromRequest(req);
+
+    if (token) {
+      try {
+        // Verify the token using Firebase Admin SDK.
+        // This confirms the token is valid and not expired.
+        await getAuth().verifyIdToken(token);
+        // If token verification is successful, the user is authenticated.
+        // Redirect them to the external editor.
+        console.log('[Auth] User with valid token accessed root path. Redirecting to external editor.');
+        res.redirect(302, 'https://markdown.piapps.dev/editor');
+      } catch (error) {
+        // If token verification fails (e.g., invalid, expired),
+        // treat the user as unauthenticated for this request.
+        console.log('[Auth] Token verification failed for root path access. Proceeding to landing page.', error.message);
+        // Call next() to pass control to the next middleware,
+        // which should serve the landing page for unauthenticated users.
+        next();
+      }
+    } else {
+      // If no token is found in the request, the user is unauthenticated.
+      // Call next() to pass control to the next middleware (e.g., serve landing page).
+      next();
+    }
+  });
 
   // Create development user helper
   const createDevUser = async () => {
@@ -83,6 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes
+  // IMPORTANT: The root '/' handler above must be registered before any static file serving for '/' or catch-all for SPA.
   app.get('/api/auth/user', devAuth, async (req: any, res: Response) => {
     console.log('[/api/auth/user] Handler invoked. req.user:', JSON.stringify(req.user, null, 2));
     try {
