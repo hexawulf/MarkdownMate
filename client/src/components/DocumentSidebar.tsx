@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -171,6 +171,9 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Create New Document</DialogTitle>
+                    <DialogDescription>
+                      Enter a title for your new document. Click "Create Document" when you're done.
+                    </DialogDescription>
                   </DialogHeader>
                   <Form {...documentForm}>
                     <form onSubmit={documentForm.handleSubmit(onCreateDocument)} className="space-y-4">
@@ -268,6 +271,9 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Create New Folder</DialogTitle>
+                        <DialogDescription>
+                          Enter a name for your new folder. Click "Create Folder" when you're done.
+                        </DialogDescription>
                       </DialogHeader>
                       <Form {...folderForm}>
                         <form onSubmit={folderForm.handleSubmit(onCreateFolder)} className="space-y-4">
