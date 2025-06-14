@@ -46,7 +46,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
 
 (async () => {
   const server = await registerRoutes(app);
