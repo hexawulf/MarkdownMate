@@ -23,9 +23,9 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
   const { 
     content, 
     setContent, 
-    setAutoSaveStatus, 
-    updateWordCount, 
-    updateCharCount 
+    setAutoSaveStatus
+    // updateWordCount, // No longer needed as setContent handles it
+    // updateCharCount  // No longer needed as setContent handles it
   } = useEditorStore();
 
   // WebSocket for real-time collaboration
@@ -75,9 +75,9 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
   const handleEditorChange = (value: string | undefined) => {
     if (value === undefined) return;
     
-    setContent(value);
-    updateWordCount(value);
-    updateCharCount(value);
+    setContent(value); // This will now also update word and char counts in the store
+    // updateWordCount(value); // Removed
+    // updateCharCount(value); // Removed
     
     // Send real-time update
     if (isConnected && documentId) {

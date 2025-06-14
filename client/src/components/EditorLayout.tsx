@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext"; // Changed import
 import { useTheme } from "@/components/ThemeProvider";
-import { Info } from "lucide-react";
+import { Info, Upload, Download as ExportIcon } from "lucide-react"; // Changed Download to ExportIcon
 import AboutModal from "@/components/AboutModal";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
 import { Button } from "@/components/ui/button";
+import ImportDialog from "@/components/ImportDialog"; // Added import
+import ExportDialog from "@/components/ExportDialog"; // Added import
+import { ImportSource } from "@/types/importExport"; // Added import
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DocumentSidebar from "@/components/DocumentSidebar";
 import MonacoEditor from "@/components/MonacoEditor";
@@ -18,8 +21,8 @@ import {
   Menu, 
   Sun, 
   Moon, 
-  Download, 
-  Share, 
+  // Download, // Replaced by ExportIcon or Upload
+  Share, // Share icon is currently used for Export button, will be replaced
   Eye, 
   Edit, 
   Columns, 
@@ -37,6 +40,8 @@ export default function EditorLayout() {
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [collaborationPanelOpen, setCollaborationPanelOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false); // Added state
+  const [showExportDialog, setShowExportDialog] = useState(false); // Added state
 
   const openAboutModal = () => setIsAboutModalOpen(true);
   const closeAboutModal = () => setIsAboutModalOpen(false);
@@ -55,6 +60,19 @@ export default function EditorLayout() {
   const documentId = location.startsWith("/document/") 
     ? parseInt(location.split("/")[2]) 
     : null;
+
+  // Handler for successful import
+  const handleDocumentImport = (importSource: ImportSource) => {
+    setContent(importSource.content);
+    // Optionally update document title or other metadata here
+    // For example: if (importSource.filename) { /* logic to update title */ }
+    // if (importSource.metadata?.title) { /* logic to update title */ }
+    toast({
+      title: "Import Successful",
+      description: `${importSource.filename || 'Content'} imported successfully.`,
+      variant: "default",
+    });
+  };
 
   // Fetch current document
   const { data: document, isLoading } = useQuery({
@@ -151,22 +169,39 @@ export default function EditorLayout() {
         </div>
         
         <div className="flex items-center space-x-3">
+          {/* Import Button */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Download className="w-5 h-5" />
+              <Button variant="ghost" size="icon" onClick={() => setShowImportDialog(true)}>
+                <Upload className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Export</TooltipContent>
+            <TooltipContent>Import Document</TooltipContent>
           </Tooltip>
-          
+
+          {/* Export Button */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Share className="w-5 h-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (currentDocument) {
+                    setShowExportDialog(true);
+                  } else {
+                    toast({
+                      title: "No Active Document",
+                      description: "Please open or create a document to export.",
+                      variant: "warning",
+                    });
+                  }
+                }}
+                // disabled={!currentDocument} // Alternative: disable button
+              >
+                <ExportIcon className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Share</TooltipContent>
+            <TooltipContent>Export Document</TooltipContent>
           </Tooltip>
           
           <Tooltip>
@@ -304,6 +339,31 @@ export default function EditorLayout() {
       />
 
       <AboutModal isOpen={isAboutModalOpen} onClose={closeAboutModal} />
+
+      {/* Import Dialog */}
+      <ImportDialog
+        isOpen={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImport={handleDocumentImport}
+      />
+
+      {/* Export Dialog */}
+      {currentDocument && ( // Conditionally render ExportDialog to ensure documentMetadata is valid
+        <ExportDialog
+          isOpen={showExportDialog}
+          onClose={() => setShowExportDialog(false)}
+          documentContent={content}
+          documentMetadata={{
+            title: currentDocument.title || 'Untitled Document',
+            author: currentUser?.displayName || undefined, // Example: use current user as author
+            tags: currentDocument.tags || [], // Ensure tags is an array
+            created: new Date(currentDocument.createdAt), // Convert string to Date
+            modified: new Date(currentDocument.updatedAt), // Convert string to Date
+            // description: currentDocument.description || undefined, // Add if available
+          }}
+          defaultFilename={currentDocument.title || 'Untitled'}
+        />
+      )}
     </div>
   );
 }
