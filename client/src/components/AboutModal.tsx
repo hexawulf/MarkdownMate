@@ -25,12 +25,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
       <DialogContent className="sm:max-w-[600px] bg-card text-card-foreground">
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold">About MarkdownMate</DialogTitle>
-          <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="absolute top-4 right-4">
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close</span>
-            </Button>
-          </DialogClose>
         </DialogHeader>
         <div className="py-4 space-y-6 text-sm">
           <DialogDescription className="text-center text-muted-foreground">
