@@ -151,15 +151,6 @@ export default function EditorLayout() {
         </div>
         
         <div className="flex items-center space-x-3">
-          {/* Collaboration indicators */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCollaborationPanelOpen(!collaborationPanelOpen)}
-          >
-            <Users className="w-5 h-5" />
-          </Button>
-          
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon">
