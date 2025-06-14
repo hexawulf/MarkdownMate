@@ -19,19 +19,35 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-    "@": path.resolve(path.dirname(new URL(import.meta.url).pathname), "client", "src"),
-    "@shared": path.resolve(path.dirname(new URL(import.meta.url).pathname), "shared"),
-    "@assets": path.resolve(path.dirname(new URL(import.meta.url).pathname), "attached_assets"),
-    // 'mammoth': 'mammoth/dist/mammoth.browser.js', // Removed incorrect alias
+      "@": path.resolve(path.dirname(new URL(import.meta.url).pathname), "client", "src"),
+      "@shared": path.resolve(path.dirname(new URL(import.meta.url).pathname), "shared"),
+      "@assets": path.resolve(path.dirname(new URL(import.meta.url).pathname), "attached_assets"),
     },
   },
-  optimizeDeps: { // Kept for mammoth
-    include: ['mammoth'],
+  optimizeDeps: {
+    include: [
+      'mammoth',
+      'turndown', 
+      'file-saver',
+      'jspdf',
+      'html2canvas',
+      '@octokit/rest'
+    ],
   },
-root: path.resolve(path.dirname(new URL(import.meta.url).pathname), "client"),
+  root: path.resolve(path.dirname(new URL(import.meta.url).pathname), "client"),
   build: {
-  outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "dist"),
+    outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      // Don't externalize these - we want them bundled but handled properly
+      output: {
+        manualChunks: {
+          // Split heavy imports into separate chunks
+          'import-libs': ['mammoth', 'turndown', '@octokit/rest'],
+          'export-libs': ['file-saver', 'jspdf', 'html2canvas'],
+        }
+      }
+    },
   },
   server: {
     fs: {
