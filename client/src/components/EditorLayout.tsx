@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext"; // Changed import
 import { useTheme } from "@/components/ThemeProvider";
+import { Info } from "lucide-react";
+import AboutModal from "@/components/AboutModal";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,10 @@ export default function EditorLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [collaborationPanelOpen, setCollaborationPanelOpen] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+
+  const openAboutModal = () => setIsAboutModalOpen(true);
+  const closeAboutModal = () => setIsAboutModalOpen(false);
 
   const { 
     currentDocument, 
@@ -180,6 +186,15 @@ export default function EditorLayout() {
             </TooltipTrigger>
             <TooltipContent>Toggle Theme</TooltipContent>
           </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={openAboutModal}>
+                <Info className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>About MarkdownMate</TooltipContent>
+          </Tooltip>
           
           {/* User Auth Section */}
           <div className="flex items-center space-x-3">
@@ -296,6 +311,8 @@ export default function EditorLayout() {
         onClose={() => setCollaborationPanelOpen(false)}
         documentId={documentId}
       />
+
+      <AboutModal isOpen={isAboutModalOpen} onClose={closeAboutModal} />
     </div>
   );
 }
