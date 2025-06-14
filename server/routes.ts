@@ -124,8 +124,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   // IMPORTANT: The root '/' handler above must be registered before any static file serving for '/' or catch-all for SPA.
-  app.get('/api/auth/user', devAuth, async (req: any, res: Response) => {
-    console.log('[/api/auth/user] Handler invoked. req.user:', JSON.stringify(req.user, null, 2));
+  app.get('/user', devAuth, async (req: any, res: Response) => {
+    console.log('[/user] Handler invoked. req.user:', JSON.stringify(req.user, null, 2));
     try {
       if (process.env.NODE_ENV === 'development') {
         const user = await createDevUser();
