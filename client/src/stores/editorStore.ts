@@ -12,8 +12,7 @@ interface EditorState {
   setCurrentDocument: (document: DocumentWithDetails | null) => void;
   setContent: (content: string) => void;
   setAutoSaveStatus: (status: EditorState["autoSaveStatus"]) => void;
-  updateWordCount: (content: string) => void;
-  updateCharCount: (content: string) => void;
+  // updateWordCount and updateCharCount methods will be removed
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -24,15 +23,19 @@ export const useEditorStore = create<EditorState>((set) => ({
   charCount: 0,
   
   setCurrentDocument: (document) => set({ currentDocument: document }),
-  setContent: (content) => set({ content }),
+  setContent: (content) => {
+    const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+    const chars = content.length;
+    set({ content, wordCount: words, charCount: chars });
+  },
   setAutoSaveStatus: (autoSaveStatus) => set({ autoSaveStatus }),
   
-  updateWordCount: (content) => {
-    const words = content.trim() ? content.trim().split(/\s+/).length : 0;
-    set({ wordCount: words });
-  },
-  
-  updateCharCount: (content) => {
-    set({ charCount: content.length });
-  },
+  // updateWordCount and updateCharCount implementations are removed
+  // updateWordCount: (content) => {
+  //   const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+  //   set({ wordCount: words });
+  // },
+  // updateCharCount: (content) => {
+  //   set({ charCount: content.length });
+  // },
 }));
