@@ -1,10 +1,3 @@
-// Dynamic imports will replace these static ones:
-// import mammoth from 'mammoth';
-// import TurndownService from 'turndown';
-// import { saveAs } from 'file-saver';
-// import { Octokit } from '@octokit/rest';
-// import jsPDF from 'jspdf';
-// import html2canvas from 'html2canvas';
 import { ImportSource, ExportOptions, DocumentMetadata } from '../types/importExport';
 
 // Define interfaces for dynamically imported modules if needed for clarity, or use 'any'
