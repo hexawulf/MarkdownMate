@@ -22,7 +22,11 @@ export default defineConfig({
     "@": path.resolve(path.dirname(new URL(import.meta.url).pathname), "client", "src"),
     "@shared": path.resolve(path.dirname(new URL(import.meta.url).pathname), "shared"),
     "@assets": path.resolve(path.dirname(new URL(import.meta.url).pathname), "attached_assets"),
+    // 'mammoth': 'mammoth/dist/mammoth.browser.js', // Removed incorrect alias
     },
+  },
+  optimizeDeps: { // Kept for mammoth
+    include: ['mammoth'],
   },
 root: path.resolve(path.dirname(new URL(import.meta.url).pathname), "client"),
   build: {

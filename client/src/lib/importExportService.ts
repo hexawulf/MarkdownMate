@@ -1,22 +1,43 @@
-import mammoth from 'mammoth';
-import TurndownService from 'turndown';
-import { saveAs } from 'file-saver';
-import { Octokit } from '@octokit/rest';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+// Dynamic imports will replace these static ones:
+// import mammoth from 'mammoth';
+// import TurndownService from 'turndown';
+// import { saveAs } from 'file-saver';
+// import { Octokit } from '@octokit/rest';
+// import jsPDF from 'jspdf';
+// import html2canvas from 'html2canvas';
 import { ImportSource, ExportOptions, DocumentMetadata } from '../types/importExport';
 
+// Define interfaces for dynamically imported modules if needed for clarity, or use 'any'
+// For example, for TurndownService constructor:
+type TurndownServiceConstructor = new (options?: any) => any; // Simplified
+
+
 class ImportExportService {
-  private turndownService: TurndownService;
-  private octokit: Octokit;
+  private githubToken?: string;
+  private turndownServiceInstance: any | null = null; // Cache instance
+  private octokitInstance: any | null = null; // Cache instance
 
   constructor(githubToken?: string) {
-    this.turndownService = new TurndownService();
-    this.octokit = new Octokit(githubToken ? { auth: githubToken } : {});
-    // Note: For Gist creation to work without errors for unauthenticated users,
-    // Octokit should be initialized without an auth token if none is provided.
-    // Creating gists anonymously is generally supported by GitHub's API.
+    this.githubToken = githubToken;
+    // Instances will be lazy-loaded
   }
+
+  private async _getTurndownService(): Promise<any> {
+    if (!this.turndownServiceInstance) {
+      const TurndownService = (await import('turndown')).default as TurndownServiceConstructor;
+      this.turndownServiceInstance = new TurndownService();
+    }
+    return this.turndownServiceInstance;
+  }
+
+  private async _getOctokit(): Promise<any> {
+    if (!this.octokitInstance) {
+      const { Octokit } = await import('@octokit/rest');
+      this.octokitInstance = new Octokit(this.githubToken ? { auth: this.githubToken } : {});
+    }
+    return this.octokitInstance;
+  }
+
 
   // --- Import Methods ---
 
@@ -35,9 +56,11 @@ class ImportExportService {
           break;
         case 'html':
           const htmlContent = await file.text();
-          content = this.turndownService.turndown(htmlContent);
+          const turndownService = await this._getTurndownService();
+          content = turndownService.turndown(htmlContent);
           break;
         case 'docx':
+          const mammoth = (await import('mammoth')).default;
           const arrayBuffer = await file.arrayBuffer();
           const result = await mammoth.extractRawText({ arrayBuffer });
           content = result.value;
@@ -69,7 +92,8 @@ class ImportExportService {
       let content = rawContent;
       // Attempt to convert if it looks like HTML, otherwise use raw text
       if (response.headers.get('content-type')?.includes('text/html') || /<html[^>]*>/i.test(rawContent.substring(0,1000))) {
-        content = this.turndownService.turndown(rawContent);
+        const turndownService = await this._getTurndownService();
+        content = turndownService.turndown(rawContent);
       }
       const filename = url.substring(url.lastIndexOf('/') + 1) || 'imported_from_url';
       console.log(`URL ${url} imported successfully.`);
@@ -86,22 +110,22 @@ class ImportExportService {
 
   async importFromGithub(githubUrl: string): Promise<ImportSource> {
     console.log(`Importing from GitHub URL: ${githubUrl}`);
+    const octokit = await this._getOctokit();
     try {
       const url = new URL(githubUrl);
       const pathParts = url.pathname.split('/');
       let owner, repo, path, gistId, contentResponse, filename;
 
       if (url.hostname === 'gist.github.com' || url.hostname === 'gist.githubusercontent.com') {
-        gistId = pathParts[1]; // Gist ID is typically the first part of the path
+        gistId = pathParts[1];
         if (!gistId) throw new Error('Invalid Gist URL: Missing Gist ID.');
 
         console.log(`Fetching Gist ID: ${gistId}`);
-        const gist = await this.octokit.gists.get({ gist_id: gistId });
+        const gist = await octokit.gists.get({ gist_id: gistId });
 
         if (!gist.data.files || Object.keys(gist.data.files).length === 0) {
           throw new Error('Gist has no files.');
         }
-        // Get the first file from the Gist
         const firstFilename = Object.keys(gist.data.files)[0];
         const firstFile = gist.data.files[firstFilename];
         if (!firstFile || typeof firstFile.content !== 'string') {
@@ -110,16 +134,14 @@ class ImportExportService {
         contentResponse = firstFile.content;
         filename = firstFile.filename || 'gistfile1.txt';
 
-      } else if (url.hostname === 'raw.githubusercontent.com' || url.hostname === 'github.com' && pathParts.includes('raw')) {
-         // Handles raw.githubusercontent.com URLs or github.com/.../raw/... URLs
+      } else if (url.hostname === 'raw.githubusercontent.com' || (url.hostname === 'github.com' && pathParts.includes('raw'))) {
         owner = pathParts[1];
         repo = pathParts[2];
-        path = pathParts.slice(url.hostname === 'raw.githubusercontent.com' ? 3 : 5).join('/'); // Adjust slice index based on hostname
+        path = pathParts.slice(url.hostname === 'raw.githubusercontent.com' ? 3 : (pathParts.indexOf('raw') + 1)).join('/');
         if (!owner || !repo || !path) throw new Error('Invalid GitHub raw URL: Missing owner, repo, or path.');
 
         console.log(`Fetching raw content from GitHub: ${owner}/${repo}/${path}`);
-        const response = await this.octokit.repos.getContent({ owner, repo, path });
-        // Ensure 'content' is present and is a string (base64 encoded)
+        const response = await octokit.repos.getContent({ owner, repo, path });
         if ('content' in response.data && typeof response.data.content === 'string') {
           contentResponse = Buffer.from(response.data.content, 'base64').toString('utf-8');
         } else {
@@ -127,36 +149,28 @@ class ImportExportService {
         }
         filename = path.split('/').pop() || 'github_file';
 
-      } else if (url.hostname === 'github.com') {
-        // Attempt to treat as a regular GitHub file URL, needs conversion to raw content URL or API call
-        // This part can be complex due to various URL structures (blobs, trees)
-        // For simplicity, we'll recommend users to use raw URLs or Gist URLs.
-        // Or, we can try to infer raw URL if it's a blob URL
-        if (pathParts.includes('blob')) {
-            owner = pathParts[1];
-            repo = pathParts[2];
-            path = pathParts.slice(4).join('/');
-            if (!owner || !repo || !path) throw new Error('Invalid GitHub blob URL.');
+      } else if (url.hostname === 'github.com' && pathParts.includes('blob')) {
+        owner = pathParts[1];
+        repo = pathParts[2];
+        path = pathParts.slice(pathParts.indexOf('blob') + 2).join('/');
+        if (!owner || !repo || !path) throw new Error('Invalid GitHub blob URL.');
 
-            console.log(`Fetching content using inferred raw path from GitHub blob URL: ${owner}/${repo}/${path}`);
-            const response = await this.octokit.repos.getContent({ owner, repo, path });
-            if ('content' in response.data && typeof response.data.content === 'string') {
-              contentResponse = Buffer.from(response.data.content, 'base64').toString('utf-8');
-            } else {
-              throw new Error('Could not retrieve content from GitHub file via blob URL. Ensure it is a file, not a directory.');
-            }
-            filename = path.split('/').pop() || 'github_blob_file';
+        console.log(`Fetching content using inferred raw path from GitHub blob URL: ${owner}/${repo}/${path}`);
+        const response = await octokit.repos.getContent({ owner, repo, path });
+        if ('content' in response.data && typeof response.data.content === 'string') {
+          contentResponse = Buffer.from(response.data.content, 'base64').toString('utf-8');
         } else {
-            throw new Error('Unsupported GitHub URL format. Please use a raw file URL (raw.githubusercontent.com or .../raw/...) or a Gist URL.');
+          throw new Error('Could not retrieve content from GitHub file via blob URL. Ensure it is a file, not a directory.');
         }
+        filename = path.split('/').pop() || 'github_blob_file';
       } else {
-        throw new Error('Invalid GitHub URL: Must be a raw.githubusercontent.com, github.com/.../raw/..., github.com/.../blob/... or gist.github.com URL.');
+        throw new Error('Unsupported GitHub URL format. Please use a raw file URL, a Gist URL, or a github.com blob URL.');
       }
 
       let finalContent = contentResponse;
-      // Convert HTML to Markdown if the fetched content appears to be HTML
       if (filename?.endsWith('.html') || /<html[^>]*>/i.test(contentResponse.substring(0,1000))) {
-        finalContent = this.turndownService.turndown(contentResponse);
+        const turndownService = await this._getTurndownService();
+        finalContent = turndownService.turndown(contentResponse);
       }
 
       console.log(`GitHub content for "${filename}" imported successfully.`);
@@ -167,7 +181,6 @@ class ImportExportService {
       };
     } catch (error) {
       console.error('Error importing from GitHub:', error);
-      // Attempt to provide more specific error messages for Octokit errors
       if (error && typeof error === 'object' && 'status' in error) {
         const octokitError = error as { status: number; message: string};
         if (octokitError.status === 404) throw new Error('GitHub resource not found (404). Check the URL.');
@@ -176,7 +189,6 @@ class ImportExportService {
       throw error;
     }
   }
-
 
   async importFromClipboard(): Promise<ImportSource> {
     console.log('Importing from clipboard');
@@ -189,7 +201,7 @@ class ImportExportService {
       return {
         type: 'clipboard',
         content,
-        filename: 'clipboard_content.md', // Default filename
+        filename: 'clipboard_content.md',
       };
     } catch (error) {
       console.error('Error importing from clipboard:', error);
@@ -204,6 +216,7 @@ class ImportExportService {
     try {
       switch (options.destination) {
         case 'download':
+          const { saveAs } = await import('file-saver');
           const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
           saveAs(blob, options.filename);
           console.log('Markdown export successful (download).');
@@ -234,6 +247,7 @@ class ImportExportService {
     try {
       switch (options.destination) {
         case 'download':
+          const { saveAs } = await import('file-saver');
           const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
           saveAs(blob, options.filename);
           console.log('Text export successful (download).');
@@ -263,23 +277,25 @@ class ImportExportService {
     console.log(`Exporting to PDF: ${options.filename}, Destination: ${options.destination}`);
     if (options.destination !== 'download') {
         console.warn(`PDF export currently only supports 'download' destination.`);
-        // For clipboard or Gist, one might consider uploading the PDF and sharing a link,
-        // or converting to a text representation if appropriate, which is out of scope here.
         throw new Error(`PDF export to ${options.destination} is not directly supported. Only download is available.`);
     }
 
     try {
+      const jsPDF = (await import('jspdf')).default;
+      const html2canvas = (await import('html2canvas')).default;
+      const { saveAs } = await import('file-saver');
+
       const pdfContainer = document.createElement('div');
       pdfContainer.style.position = 'absolute';
-      pdfContainer.style.left = '-9999px'; // Keep it off-screen
-      pdfContainer.style.width = '800px'; // A reasonable width for content
-      pdfContainer.innerHTML = `<div style="padding: 20px;">${htmlContent}</div>`; // Wrap content for padding
+      pdfContainer.style.left = '-9999px';
+      pdfContainer.style.width = '800px';
+      pdfContainer.innerHTML = `<div style="padding: 20px;">${htmlContent}</div>`;
       document.body.appendChild(pdfContainer);
 
       const canvas = await html2canvas(pdfContainer, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true, // If images are involved
-        logging: true, // For debugging
+        scale: 2,
+        useCORS: true,
+        logging: true,
       });
 
       document.body.removeChild(pdfContainer);
@@ -287,7 +303,7 @@ class ImportExportService {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'portrait',
-        unit: 'pt', // points
+        unit: 'pt',
         format: 'a4',
       });
 
@@ -313,9 +329,9 @@ class ImportExportService {
 
     } catch (error) {
       console.error('Error exporting to PDF:', error);
-      if (document.querySelector('#pdf-container-temp')) {
-        document.body.removeChild(document.querySelector('#pdf-container-temp')!);
-      }
+      // Attempt to remove container if it still exists on error
+      const tempContainer = document.querySelector('#pdf-container-temp'); // Assuming an ID if you add one
+      if (tempContainer) document.body.removeChild(tempContainer);
       throw error;
     }
   }
@@ -326,6 +342,7 @@ class ImportExportService {
       const jsonString = JSON.stringify(data, null, 2);
       switch (options.destination) {
         case 'download':
+          const { saveAs } = await import('file-saver');
           const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
           saveAs(blob, options.filename);
           console.log('JSON export successful (download).');
@@ -353,14 +370,15 @@ class ImportExportService {
 
   private async exportToGist(content: string, filename: string, description: string, gistDescription?: string): Promise<string> {
     console.log(`Creating Gist: ${filename}`);
+    const octokit = await this._getOctokit();
     try {
-      const response = await this.octokit.gists.create({
+      const response = await octokit.gists.create({
         files: {
           [filename]: {
             content: content,
           },
         },
-        public: true, // Public Gist
+        public: true,
         description: gistDescription || description,
       });
       if (response.data.html_url) {
@@ -373,10 +391,10 @@ class ImportExportService {
         console.error('Error creating Gist:', error);
         if (error && typeof error === 'object' && 'status' in error) {
             const octokitError = error as { status: number; message: string, documentation_url?: string };
-            if (octokitError.status === 401) { // Unauthorized
+            if (octokitError.status === 401) {
                 throw new Error('Gist creation failed: GitHub token is invalid or missing required scopes (401). Please provide a valid token with "gist" scope.');
             }
-             if (octokitError.status === 422) { // Unprocessable Entity - often due to empty content or other validation issues
+             if (octokitError.status === 422) {
                 throw new Error(`Gist creation failed: Unprocessable Entity (422). This can happen if the content is empty or due to other GitHub validation rules. ${octokitError.message}`);
             }
         }
@@ -385,10 +403,6 @@ class ImportExportService {
   }
 
   // --- Helper Methods ---
-  // May include methods for metadata extraction, specific conversions, etc.
 }
 
-// Initialize with an optional GitHub token (e.g., from environment variables or auth context)
-// const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN; // Example of how you might get a token
-// export default new ImportExportService(GITHUB_TOKEN);
-export default new ImportExportService(); // For now, no token by default
+export default new ImportExportService();
