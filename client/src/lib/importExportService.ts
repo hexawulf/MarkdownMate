@@ -398,4 +398,6 @@ class ImportExportService {
   // --- Helper Methods ---
 }
 
+// Export both the class and a default instance
+export { ImportExportService };
 export default new ImportExportService();

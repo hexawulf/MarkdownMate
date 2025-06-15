@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle, FileText, ClipboardPaste } from 'lucide-react';
-import ImportExportService from '@/lib/importExportService'; // Assuming path
+import importExportService from '@/lib/importExportService'; // Use default instance
 import { ImportSource } from '@/types/importExport'; // Assuming path
 
 interface ImportDialogProps {
@@ -22,8 +22,6 @@ interface ImportDialogProps {
   onClose: () => void;
   onImport: (importSource: ImportSource) => void;
 }
-
-const importExportService = new ImportExportService(); // Instantiate the service
 
 const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }) => {
   const { toast } = useToast(); // Added
