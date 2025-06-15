@@ -82,9 +82,15 @@ export default defineConfig({
     },
   },
   server: {
+    // Added explicit configuration for development server
+    port: 5004, // Ensure Vite knows about the port
+    host: "0.0.0.0", // Allow external access
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
+    // Since you're using single-server setup, no proxy needed
+    // But we'll be explicit about handling middleware mode
+    middlewareMode: false, // Let Express handle this
   },
 });
