@@ -17,15 +17,15 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// ====== ADD CSP HEADERS FOR GOOGLE FONTS ======
+// ====== UPDATED CSP HEADERS FOR ALL REQUIRED RESOURCES ======
 app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
     "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "script-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: blob:; " +
-    "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;"
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://replit.com; " +
+    "img-src 'self' data: blob: https://lh3.googleusercontent.com https://googleusercontent.com; " +
+    "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cdn.jsdelivr.net;"
   );
   next();
 });
@@ -60,7 +60,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add this temporary debug middleware
+// Debug middleware for API routes
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/user')) {
     console.log(`🔍 API Route Hit: ${req.method} ${req.path}`);
@@ -71,25 +71,7 @@ app.use((req, res, next) => {
 // IMPORTANT: Register auth routes FIRST
 app.use('/api/auth', authRoutes);
 
-// Add these lines right after: app.use('/api/auth', authRoutes);
-
-console.log('🔧 Auth routes registered on /api/auth');
-console.log('🔧 Auth routes type:', typeof authRoutes);
-console.log('🔧 Auth routes keys:', Object.keys(authRoutes));
-
-// Test if auth module loaded correctly
-console.log('🔧 AuthRoutes object:', authRoutes);
-
-// Add a test route to verify /api/auth works
-app.get('/api/auth-test', (req, res) => {
-  res.json({ message: 'Direct auth test works!' });
-});
-
-
-
-
-
-// ====== ADD REDIRECT FOR OLD /api/login ENDPOINT ======
+// ====== REDIRECT FOR OLD /api/login ENDPOINT ======
 app.use('/api/login', (req, res) => {
   console.log(`🔀 Redirecting /api/login ${req.method} to /api/auth/login`);
   if (req.method === 'GET') {
@@ -106,7 +88,7 @@ app.use('/api/login', (req, res) => {
   // IMPORTANT: Register API routes BEFORE static/vite middleware
   const server = await registerRoutes(app);
 
-  // Add this test route right before static middleware
+  // Test route for debugging
   app.get('/api/direct-test', (req, res) => {
     console.log('🎯 Direct test route hit!');
     res.json({ message: "Direct route works!", timestamp: new Date() });
@@ -117,6 +99,8 @@ app.use('/api/login', (req, res) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     
+    console.error(`❌ Server Error ${status}:`, message);
+    console.error(`❌ Error stack:`, err.stack);
     res.status(status).json({ message });
     throw err;
   });
@@ -131,7 +115,7 @@ app.use('/api/login', (req, res) => {
     serveStatic(app);
   }
 
-  // MarkdownMate runs on port 5004 (not 5000 like CodePatchwork)
+  // MarkdownMate runs on port 5004
   const port = 5004;
 
   // Graceful shutdown handlers

@@ -1,9 +1,9 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-// import { db } from "../lib/db"; // No longer directly used
-// import { users, documents, folders, documentCollaborators } from "../shared/schema"; // Encapsulated by storage
-// import { eq, desc, ilike, or, and, count, isNull } from "drizzle-orm"; // Encapsulated by storage
+import { db } from "./db";
+import { users, documents, folders, documentCollaborators } from "../shared/schema";
+import { eq, desc, ilike, or, and, count, isNull } from "drizzle-orm";
 import { getAuth } from "firebase-admin/auth";
 import { setupAuth, isAuthenticated, getTokenFromRequest } from "./firebaseAuth";
 import { storage } from "./storage";
@@ -37,41 +37,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Server-side fallback redirect for authenticated users.
-  // This handler checks if a user accessing the root path ('/') is already authenticated.
-  // If authenticated, it redirects them to the external editor.
-  // This acts as a fallback for client-side redirection and ensures users with valid sessions
-  // are taken directly to the editor experience.
-  // This route must be registered *before* any static file serving middleware for the root path
-  // or catch-all SPA handlers, to ensure it's processed first for the '/' route.
   app.get('/', async (req, res, next) => {
-    // Note: In development, you might want to see the landing page even if authenticated.
-    // To disable this redirect during development, you could uncomment the next line:
-    // if (process.env.NODE_ENV === 'development') { return next(); }
-
-    // Attempt to retrieve the authentication token from the request.
     const token = getTokenFromRequest(req);
 
     if (token) {
       try {
-        // Verify the token using Firebase Admin SDK.
-        // This confirms the token is valid and not expired.
         await getAuth().verifyIdToken(token);
-        // If token verification is successful, the user is authenticated.
-        // Redirect them to the external editor.
         console.log('[Auth] User with valid token accessed root path. Redirecting to external editor.');
         res.redirect(302, 'https://markdown.piapps.dev/editor');
       } catch (error) {
-        // If token verification fails (e.g., invalid, expired),
-        // treat the user as unauthenticated for this request.
         console.log('[Auth] Token verification failed for root path access. Proceeding to landing page.', error.message);
-        // Call next() to pass control to the next middleware,
-        // which should serve the landing page for unauthenticated users.
         next();
       }
     } else {
-      // If no token is found in the request, the user is unauthenticated.
-      // Call next() to pass control to the next middleware (e.g., serve landing page).
       next();
+    }
+  });
+
+  // Database test route - ADD THIS FOR DEBUGGING
+  app.get('/api/db-test', async (req, res) => {
+    try {
+      console.log('[DB Test] Testing database connection...');
+      console.log('[DB Test] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+      
+      // Test basic connection
+      const result = await db.select().from(users).limit(1);
+      console.log('[DB Test] Users query successful, count:', result.length);
+      
+      // Test if tables exist by trying to select from documents table
+      const docCount = await db.select().from(documents).limit(1);
+      console.log('[DB Test] Documents table accessible, count:', docCount.length);
+      
+      res.json({ 
+        message: "Database connection successful", 
+        userCount: result.length,
+        documentCount: docCount.length,
+        driver: "PostgreSQL",
+        tablesAccessible: true
+      });
+    } catch (error) {
+      console.error("[DB Test] Database connection failed:", error);
+      console.error("[DB Test] Error details:", {
+        name: error.name,
+        message: error.message,
+        code: error.code
+      });
+      res.status(500).json({ 
+        message: "Database connection failed", 
+        error: error.message,
+        code: error.code
+      });
     }
   });
 
@@ -86,19 +101,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
     
     try {
-      // Try to get existing user first
       let user = await storage.getUser(devUser.id);
-
       if (user) {
         return user;
       }
-
-      // Insert new user if doesn't exist
       user = await storage.upsertUser(devUser);
       return user;
     } catch (error) {
       console.error("Failed to create dev user:", error);
-      // Return basic info if storage fails, consistent with previous behavior
       return devUser;
     }
   };
@@ -123,7 +133,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes
-  // IMPORTANT: The root '/' handler above must be registered before any static file serving for '/' or catch-all for SPA.
   app.get('/user', devAuth, async (req: any, res: Response) => {
     console.log('[/user] Handler invoked. req.user:', JSON.stringify(req.user, null, 2));
     try {
@@ -133,7 +142,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      // Production authentication check
       if (!req.user?.claims?.sub) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -156,27 +164,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const folderIdQuery = req.query.folderId as string | undefined;
 
-      // storage.getDocuments expects number | undefined. null means root for some DB queries but not for storage.ts
       let folderId: number | undefined = undefined;
       if (folderIdQuery && folderIdQuery !== 'null') {
         folderId = parseInt(folderIdQuery);
-      } else if (folderIdQuery === 'null') {
-        // This case implies documents at the root (folderId is null in DB)
-        // storage.getDocuments with folderId=undefined should fetch these if it also fetches non-folderId docs.
-        // Based on storage.ts, if folderId is undefined, it fetches all docs for the user.
-        // If folderId is a number, it filters by that folderId.
-        // We need to clarify if `storage.getDocuments(userId, undefined)` includes those with folderId IS NULL.
-        // Assuming storage.getDocuments(userId, undefined) gets ALL documents, and
-        // storage.getDocuments(userId, specificFolderId) gets documents for that folder.
-        // The old logic had a specific case for folderId === null (isNull(documents.folderId)).
-        // The current storage.getDocuments does not directly support querying for IS NULL folderId explicitly.
-        // It seems storage.getDocuments(userId, undefined) fetches all, then we might need to filter locally if only root items are needed.
-        // However, the prompt says "Adjust filtering for folderId as the storage.getDocuments method already handles it."
-        // storage.getDocuments(userId, folderId) -> where(and(eq(documents.authorId, userId), folderId ? eq(documents.folderId, folderId) : undefined))
-        // This means if folderId is undefined, it only filters by userId. This is not what we want for the 'null' case.
-        // For now, I will call storage.getDocuments and if folderIdQuery === 'null', I'll filter results.
-        // This is a deviation but necessary with current storage.ts.
-        // Alternative: if folderIdQuery === 'null', pass a special value if storage supported it, or fetch all and filter.
       }
 
       const userDocuments = await storage.getDocuments(userId, folderId);
@@ -210,24 +200,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // UPDATED DOCUMENT CREATION WITH USER EXISTENCE CHECK
   app.post('/api/documents', devAuth, async (req: any, res: Response) => {
     try {
+      console.log('[Documents] ===== DOCUMENT CREATION DEBUG =====');
       const userId = req.user.claims.sub;
       const { title, content, folderId } = req.body;
       
+      console.log('[Documents] User ID:', userId);
+      console.log('[Documents] Request body:', { title, content, folderId });
+      
       if (!title) {
+        console.log('[Documents] Missing title, returning 400');
         return res.status(400).json({ message: "Title is required" });
+      }
+
+      // CRITICAL: Ensure user exists in database before creating document
+      console.log('[Documents] Checking if user exists in database...');
+      let user = await storage.getUser(userId);
+      
+      if (!user) {
+        console.log('[Documents] User not found in database, creating user...');
+        // Create user from Firebase claims
+        const userData = {
+          id: userId,
+          email: req.user.claims.email || `${userId}@unknown.com`,
+          displayName: req.user.claims.name || req.user.claims.displayName || 'Unknown User',
+          photoURL: req.user.claims.picture || null,
+          emailVerified: req.user.claims.email_verified || false
+        };
+        
+        user = await storage.upsertUser(userData);
+        console.log('[Documents] User created successfully:', user.id);
+      } else {
+        console.log('[Documents] User exists in database:', user.id);
       }
 
       // If folderId provided, verify it exists and user owns it
       if (folderId) {
-        // storage.getFolders(userId, parentId) but we need to find a specific folder by ID.
-        // We can fetch all folders for the user and then filter, or rely on a more specific (not available) storage method.
-        // For now, let's fetch folders and check. This is not ideal for performance if there are many folders.
-        const userFolders = await storage.getFolders(userId);
-        const folderExists = userFolders.some(f => f.id === folderId);
-        if (!folderExists) {
-          return res.status(404).json({ message: "Folder not found or access denied" });
+        console.log('[Documents] Checking folder access for folderId:', folderId);
+        try {
+          const userFolders = await storage.getFolders(userId);
+          console.log('[Documents] User folders:', userFolders.length);
+          const folderExists = userFolders.some(f => f.id === folderId);
+          if (!folderExists) {
+            console.log('[Documents] Folder not found, returning 404');
+            return res.status(404).json({ message: "Folder not found or access denied" });
+          }
+          console.log('[Documents] Folder access verified');
+        } catch (folderError) {
+          console.error('[Documents] Error checking folders:', folderError);
+          throw folderError;
         }
       }
       
@@ -236,22 +259,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: content || '',
         authorId: userId,
         folderId: folderId || null,
-        isPublic: false // Default value
+        isPublic: false
       };
 
+      console.log('[Documents] Document payload:', newDocumentPayload);
+      console.log('[Documents] About to call storage.createDocument...');
+      
       const createdDocument = await storage.createDocument(newDocumentPayload);
+      
+      console.log('[Documents] Document created successfully:', createdDocument);
+      console.log('[Documents] Fetching document details...');
 
       // Return the created document with author info by calling getDocument
       const documentWithDetails = await storage.getDocument(createdDocument.id, userId);
 
       if (!documentWithDetails) {
-        // This should ideally not happen if createDocument succeeded
+        console.log('[Documents] Failed to retrieve created document details');
         return res.status(500).json({ message: "Failed to retrieve created document details" });
       }
 
+      console.log('[Documents] Returning document with details:', documentWithDetails.id);
       res.status(201).json(documentWithDetails);
     } catch (error) {
-      console.error("Error creating document:", error);
+      console.error('[Documents] ===== DETAILED ERROR =====');
+      console.error('[Documents] Error type:', typeof error);
+      console.error('[Documents] Error name:', error?.name);
+      console.error('[Documents] Error message:', error?.message);
+      console.error('[Documents] Error code:', error?.code);
+      console.error('[Documents] Error stack:', error?.stack);
+      console.error('[Documents] Full error object:', error);
+      console.error('[Documents] ===== END ERROR DEBUG =====');
       res.status(500).json({ message: "Failed to create document" });
     }
   });
@@ -262,13 +299,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentId = parseInt(req.params.id);
       const updates = req.body;
       
-      // Remove fields that shouldn't be updated directly
       delete updates.id;
       delete updates.authorId;
       delete updates.createdAt;
       
-      // Add updated timestamp
-      updates.updatedAt = new Date(); // storage.updateDocument handles this
+      updates.updatedAt = new Date();
 
       const updatedDocument = await storage.updateDocument(documentId, userId, updates);
 
@@ -276,11 +311,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Document not found or update failed" });
       }
       
-      // Return the updated document with author info
       const documentWithDetails = await storage.getDocument(documentId, userId);
 
       if (!documentWithDetails) {
-        // This should ideally not happen if updateDocument succeeded and returned a document
         return res.status(500).json({ message: "Failed to retrieve updated document details" });
       }
 
@@ -318,16 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Search query is required" });
       }
       
-      // storage.searchDocuments returns Document[], which might not have author/folder details.
-      // The previous query joined to get these. storage.ts searchDocuments only returns Document columns.
-      // This is a change in response if DocumentWithDetails was expected.
-      // The prompt for this route was: Replace `db.select()...` with `storage.searchDocuments()`.
-      // The return type of storage.searchDocuments is Document[], not DocumentWithDetails[].
-      // This means author and folder details will be missing if we directly use it.
-      // For now, I will follow the direct replacement instruction.
-      // If full details are needed, this would require a change in storage.ts or post-processing here.
       const searchResults = await storage.searchDocuments(userId, query);
-      
       res.json(searchResults);
     } catch (error) {
       console.error("Error searching documents:", error);
@@ -344,23 +368,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let parentId: number | undefined = undefined;
       if (parentIdQuery && parentIdQuery !== 'null') {
         parentId = parseInt(parentIdQuery);
-      } else if (parentIdQuery === 'null') {
-        // storage.getFolders(userId, undefined) is for root folders if it filters parentId = null.
-        // storage.getFolders(userId, parentId) in storage.ts:
-        // .where(and(eq(folders.authorId, userId), parentId ? eq(folders.parentId, parentId) : undefined))
-        // This means parentId = undefined in the call will NOT filter for parentId IS NULL. It will return all folders.
-        // This is similar to the /api/documents issue.
-        // For now, if parentIdQuery === 'null', I'll fetch all and filter.
-        // This is not ideal. The alternative would be for storage.getFolders to explicitly handle null for parentId.
       }
       
       const userFolders = await storage.getFolders(userId, parentId);
 
-      // The old query returned FolderWithDetails (including author) and documentCount.
-      // storage.getFolders returns Folder[].
-      // This is a change in API response: author details and documentCount will be missing.
-      // The prompt mentioned documentCount would be lost. Author details are also not in Folder type.
-      // For now, this is a direct replacement.
       if (parentIdQuery === 'null') {
         res.json(userFolders.filter(folder => folder.parentId === null));
       } else {
@@ -381,18 +392,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Name is required" });
       }
 
-      // If parentId provided, verify parent folder exists and user owns it
       if (parentId) {
-        const userFolders = await storage.getFolders(userId); // Fetches all folders for user
+        const userFolders = await storage.getFolders(userId);
         const parentFolderExists = userFolders.some(f => f.id === parentId);
         if (!parentFolderExists) {
           return res.status(404).json({ message: "Parent folder not found or access denied" });
         }
       }
 
-      // Check for duplicate folder names in same parent
-      // storage.getFolders(userId, parentId) can list folders in the target parent location.
-      // If parentId is null/undefined, it means root.
       const foldersInParent = await storage.getFolders(userId, parentId || undefined);
       const duplicateNameExists = foldersInParent.some(
         (folder) => folder.name === name && folder.authorId === userId
@@ -411,9 +418,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const createdFolder = await storage.createFolder(newFolderPayload);
-
-      // storage.createFolder returns Folder.
-      // The old response included author and documentCount. These will be missing.
       res.status(201).json(createdFolder);
     } catch (error) {
       console.error("Error creating folder:", error);
@@ -426,8 +430,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const folderId = parseInt(req.params.id);
       
-      // Check if folder has any documents or subfolders
-      // storage.getDocuments(userId, folderId) to check for documents in this folder by this user
       const documentsInFolder = await storage.getDocuments(userId, folderId);
       if (documentsInFolder.length > 0) {
         return res.status(400).json({
@@ -435,7 +437,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // storage.getFolders(userId, folderId) to check for subfolders in this folder by this user
       const subFolders = await storage.getFolders(userId, folderId);
       if (subFolders.length > 0) {
         return res.status(400).json({ 
@@ -475,7 +476,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     ws.on('close', () => {
       console.log('WebSocket connection closed');
-      // Clean up user from all document sessions
       Array.from(documentSessions.entries()).forEach(([documentId]) => {
         leaveDocument(ws, documentId);
       });
@@ -513,7 +513,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const session = { ws, userId };
     documentSessions.get(documentId)!.add(session);
     
-    // Notify other users in the document
     broadcastToDocument(documentId, {
       type: 'user-joined',
       userId,
@@ -529,13 +528,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (sessionToRemove) {
         sessions.delete(sessionToRemove);
         
-        // Notify other users
         broadcastToDocument(documentId, {
           type: 'user-left',
           userId: sessionToRemove.userId
         }, ws);
         
-        // Clean up empty sessions
         if (sessions.size === 0) {
           documentSessions.delete(documentId);
         }
