@@ -138,4 +138,24 @@ router.get('/profile', async (req, res) => {
   }
 });
 
+// Add this route to the END of your server/routes/auth.ts file:
+
+// Debug endpoint to list all routes
+router.get('/debug', (req, res) => {
+  res.json({
+    message: 'Auth routes debug',
+    availableRoutes: [
+      'GET /api/auth/debug',
+      'GET /api/auth/login',
+      'POST /api/auth/login',
+      'POST /api/auth/register', 
+      'POST /api/auth/logout',
+      'GET /api/auth/profile'
+    ],
+    timestamp: new Date().toISOString(),
+    server: 'MarkdownMate Auth Service'
+  });
+});
+
+
 export default router;
