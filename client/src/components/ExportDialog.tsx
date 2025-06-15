@@ -21,14 +21,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, AlertCircle } from 'lucide-react';
-import ImportExportService from '@/lib/importExportService'; // Assuming path
-import { ExportOptions, DocumentMetadata } from '@/types/importExport'; // Assuming path
+import { ImportExportService } from '@/lib/importExportService'; // Import the class
+import { ExportOptions, DocumentMetadata } from '@/types/importExport';
 
 interface ExportDialogProps {
   isOpen: boolean;
   onClose: () => void;
   documentContent: string;
-  documentMetadata: DocumentMetadata; // Assuming metadata is always available for simplicity
+  documentMetadata: DocumentMetadata;
   defaultFilename?: string;
 }
 
@@ -50,7 +50,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   documentMetadata,
   defaultFilename,
 }) => {
-  const { toast } = useToast(); // Added
+  const { toast } = useToast();
   const [filename, setFilename] = useState(getFilenameWithoutExtension(defaultFilename));
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('md');
   const [selectedDestination, setSelectedDestination] = useState<ExportDestination>('download');
@@ -60,12 +60,12 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Instantiate service, potentially with token if destination is gist
+  // Instantiate service properly with the class constructor
   const importExportService = useMemo(() => {
     if (selectedDestination === 'gist' && githubToken) {
       return new ImportExportService(githubToken);
     }
-    return new ImportExportService(); // No token for other cases or if token is not yet entered
+    return new ImportExportService(); // Create new instance
   }, [selectedDestination, githubToken]);
 
   useEffect(() => {
@@ -74,7 +74,6 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
       setSelectedFormat('md');
       setSelectedDestination('download');
       setIncludeMetadata(true);
-      // setGithubToken(''); // Don't reset token if user might reuse it
       setIsLoading(false);
       setError(null);
     }
@@ -88,8 +87,8 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     const options: ExportOptions = {
       format: selectedFormat,
       filename: finalFilename,
-      includeMetadata: selectedFormat === 'json' ? true : includeMetadata, // JSON always includes it in its structure
-      destination: selectedDestination,
+      includeMetadata: selectedFormat === 'json' ? true : includeMetadata,
+      destination: selectedDestination as 'download' | 'github' | 'gist' | 'clipboard', // Type assertion to match your types
     };
 
     try {
@@ -98,14 +97,9 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           await importExportService.exportToMd(documentContent, options);
           break;
         case 'txt':
-          // For TXT, we might want to explicitly exclude metadata or strip it
-          // For now, documentContent is assumed to be plain or Markdown.
-          // If metadata is included and content is Markdown, it might appear as is.
           await importExportService.exportToTxt(documentContent, options);
           break;
         case 'pdf':
-          // Basic HTML wrapper for PDF export. For better results, a proper Markdown-to-HTML converter is needed.
-          // This simple wrapper helps html2canvas capture the content.
           const htmlContent = `
             <div style="font-family: sans-serif; padding: 20px;">
               ${documentMetadata.title ? `<h1>${documentMetadata.title}</h1>` : ''}
@@ -124,16 +118,16 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         default:
           throw new Error('Unsupported format selected.');
       }
-      toast({ // Added success toast
+      toast({
         title: "Export Successful",
         description: `Document exported as ${options.filename} to ${options.destination}.`,
       });
-      onClose(); // Close dialog on successful export
+      onClose();
     } catch (err: any) {
       console.error("Export failed:", err);
       const errorMessage = err.message || 'An unknown error occurred during export.';
-      setError(errorMessage); // Keep for in-dialog error display
-      toast({ // Added error toast
+      setError(errorMessage);
+      toast({
         title: "Export Failed",
         description: `Error exporting document: ${errorMessage}`,
         variant: "destructive",
@@ -144,9 +138,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   };
 
   const isGistDestination = selectedDestination === 'gist';
-  // PDF export only supports download for now, as per ImportExportService implementation
   const isPdfAndNotDownload = selectedFormat === 'pdf' && selectedDestination !== 'download';
-
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -219,7 +211,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
             <p className="text-xs text-yellow-600">PDF export currently only supports download.</p>
           )}
 
-          {selectedFormat !== 'json' && ( // JSON structure inherently includes metadata
+          {selectedFormat !== 'json' && (
             <div className="flex items-center space-x-2 pt-2">
               <Checkbox
                 id="include-metadata"

@@ -21,11 +21,12 @@ app.use(cors({
 app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
-    "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://replit.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://replit.com; " +
+    "worker-src 'self' blob:; " +
     "img-src 'self' data: blob: https://lh3.googleusercontent.com https://googleusercontent.com; " +
-    "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cdn.jsdelivr.net;"
+    "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cdn.jsdelivr.net wss: ws:;"
   );
   next();
 });
