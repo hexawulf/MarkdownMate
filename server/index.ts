@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
+    if (path.startsWith("/api") || path.startsWith("/user")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
@@ -68,10 +68,8 @@ app.use('/api/auth', authRoutes);
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // MarkdownMate runs on port 5004 (not 5000 like CodePatchwork)
+  const port = 5004;
   
   // Graceful shutdown handlers
   process.on('SIGTERM', () => {
