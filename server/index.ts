@@ -46,11 +46,28 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add this temporary debug middleware
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/user')) {
+    console.log(`🔍 API Route Hit: ${req.method} ${req.path}`);
+  }
+  next();
+});
+
+// IMPORTANT: Register auth routes FIRST
 app.use('/api/auth', authRoutes);
 
 (async () => {
+  // IMPORTANT: Register API routes BEFORE static/vite middleware
   const server = await registerRoutes(app);
 
+  // Add this test route right before static middleware
+  app.get('/api/direct-test', (req, res) => {
+    console.log('🎯 Direct test route hit!');
+    res.json({ message: "Direct route works!", timestamp: new Date() });
+  });
+
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -59,12 +76,13 @@ app.use('/api/auth', authRoutes);
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // IMPORTANT: Setup static/vite AFTER API routes
+  // This ensures API routes are registered and handled first
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
+    // In production, serve static files
+    console.log('🚀 Running in PRODUCTION mode - serving static files');
     serveStatic(app);
   }
 
@@ -109,5 +127,7 @@ app.use('/api/auth', authRoutes);
     host: "0.0.0.0",
   }, () => {
     log(`serving on port ${port}`);
+    console.log(`🌍 Environment: ${app.get("env") || 'development'}`);
+    console.log(`📂 Serving: ${app.get("env") === "development" ? 'Vite dev server' : 'Static files from /dist'}`);
   });
 })();

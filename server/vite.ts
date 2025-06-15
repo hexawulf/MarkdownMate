@@ -87,19 +87,34 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  console.log(`📂 Serving static files from: ${distPath}`);
+  
+  // Serve static files (CSS, JS, images, etc.) but NOT HTML files
+  app.use(express.static(distPath, {
+    // Don't serve index.html automatically - we'll handle that in the catch-all
+    index: false
+  }));
 
-  // fall through to index.html if the file doesn't exist
+  // IMPORTANT: This catch-all must be registered LAST and handle route exclusions properly
   app.use("*", (req, res, next) => {
     const url = req.originalUrl;
     
     // Skip all API routes, user route, and WebSocket routes
     if (url.startsWith('/api/') || url.startsWith('/user') || url.startsWith('/ws')) {
       console.log(`[STATIC] Skipping SPA for API route: ${url}`);
-      return next();
+      return next(); // Let Express handle the API route
     }
     
     console.log(`[STATIC] Serving SPA for route: ${url}`);
-    res.sendFile(path.resolve(distPath, "index.html"));
+    
+    // For all other routes, serve the React SPA
+    const indexPath = path.resolve(distPath, "index.html");
+    
+    if (!fs.existsSync(indexPath)) {
+      console.error(`❌ index.html not found at: ${indexPath}`);
+      return res.status(500).send('index.html not found - please build the client first');
+    }
+    
+    res.sendFile(indexPath);
   });
 }
