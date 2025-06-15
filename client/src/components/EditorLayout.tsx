@@ -15,7 +15,8 @@ import MonacoEditor from "@/components/MonacoEditor";
 import MarkdownPreview from "@/components/MarkdownPreview";
 import CollaborationPanel from "@/components/CollaborationPanel";
 import { useEditorStore } from "@/stores/editorStore";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   FileText, 
   Menu, 
@@ -36,6 +37,7 @@ export default function EditorLayout() {
   const { theme, toggleTheme } = useTheme();
   const [location, setLocation] = useLocation();
   const { toast } = useToast(); // Initialize toast
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [collaborationPanelOpen, setCollaborationPanelOpen] = useState(false);
@@ -61,17 +63,62 @@ export default function EditorLayout() {
     ? parseInt(location.split("/")[2]) 
     : null;
 
+  // Mutation for creating new document
+  const createDocumentMutation = useMutation({
+    mutationFn: async (data: { title: string; content: string }) => {
+      return await apiRequest("POST", "/api/documents", data);
+    },
+    onSuccess: (newDocument) => {
+      // Update the store with the new document
+      setCurrentDocument(newDocument);
+      
+      // Navigate to the new document URL
+      setLocation(`/document/${newDocument.id}`);
+      
+      // Invalidate documents query to refresh sidebar
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      
+      toast({
+        title: "Document Created",
+        description: `Document "${newDocument.title}" created and imported successfully.`,
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      console.error("Error creating document:", error);
+      toast({
+        title: "Failed to Create Document",
+        description: "Could not create a new document. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handler for successful import
-  const handleDocumentImport = (importSource: ImportSource) => {
+  const handleDocumentImport = async (importSource: ImportSource) => {
+    // Set content in editor immediately
     setContent(importSource.content);
-    // Optionally update document title or other metadata here
-    // For example: if (importSource.filename) { /* logic to update title */ }
-    // if (importSource.metadata?.title) { /* logic to update title */ }
-    toast({
-      title: "Import Successful",
-      description: `${importSource.filename || 'Content'} imported successfully.`,
-      variant: "default",
-    });
+    
+    // If no current document, create one
+    if (!currentDocument) {
+      const title = importSource.filename 
+        ? importSource.filename.replace(/\.[^/.]+$/, "") // Remove file extension
+        : "Imported Document";
+      
+      // Create new document with imported content
+      createDocumentMutation.mutate({
+        title,
+        content: importSource.content,
+      });
+    } else {
+      // If we have a current document, just show success toast
+      // The auto-save will handle saving the new content
+      toast({
+        title: "Import Successful",
+        description: `${importSource.filename || 'Content'} imported successfully.`,
+        variant: "default",
+      });
+    }
   };
 
   // Fetch current document
@@ -172,7 +219,12 @@ export default function EditorLayout() {
           {/* Import Button */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={() => setShowImportDialog(true)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowImportDialog(true)}
+                disabled={createDocumentMutation.isPending}
+              >
                 <Upload className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
@@ -192,7 +244,7 @@ export default function EditorLayout() {
                     toast({
                       title: "No Active Document",
                       description: "Please open or create a document to export.",
-                      variant: "warning",
+                      variant: "destructive",
                     });
                   }
                 }}
