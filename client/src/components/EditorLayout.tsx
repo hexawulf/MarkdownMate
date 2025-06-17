@@ -133,11 +133,18 @@ export default function EditorLayout() {
   });
 
   useEffect(() => {
+    // console.log('[EditorLayout Load] documentId from URL:', documentId);
+    // console.log('[EditorLayout Load] Fetched document object from useQuery:', document);
     if (document) {
+      // console.log('[EditorLayout Load] Document details - ID:', document.id, 'Title:', document.title, 'Content length:', document.content?.length);
+      // console.log('[EditorLayout Load] Calling setCurrentDocument and setContent from store.');
       setCurrentDocument(document);
       setContent(document.content || "");
     }
-  }, [document, setCurrentDocument, setContent]);
+    // else {
+    //   console.log('[EditorLayout Load] Document data is not available from useQuery (yet or failed). isLoading:', isLoading);
+    // }
+  }, [document, setCurrentDocument, setContent, documentId, isLoading]);
 
   const handleLogout = async () => { // Updated handleLogout
     try {

@@ -203,25 +203,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // UPDATED DOCUMENT CREATION WITH USER EXISTENCE CHECK
   app.post('/api/documents', devAuth, async (req: any, res: Response) => {
     try {
-      console.log('[Documents] ===== DOCUMENT CREATION DEBUG =====');
+      // console.log('[Documents] ===== DOCUMENT CREATION DEBUG =====');
       const userId = req.user.claims.sub;
       const { title, content, folderId } = req.body;
       
-      console.log('[Documents] User ID:', userId);
-      console.log('[Documents] Request body:', { title, content, folderId });
+      // console.log('[Documents] User ID:', userId);
+      // console.log('[Documents] Request body:', { title, content, folderId });
       
       if (!title) {
-        console.log('[Documents] Missing title, returning 400');
+        // console.log('[Documents] Missing title, returning 400'); // Optional: keep for important validation
         return res.status(400).json({ message: "Title is required" });
       }
 
       // CRITICAL: Ensure user exists in database before creating document
-      console.log('[Documents] Checking if user exists in database...');
+      // console.log('[Documents] Checking if user exists in database...');
       let user = await storage.getUser(userId);
       
       if (!user) {
-        console.log('[Documents] User not found in database, creating user...');
-        // Create user from Firebase claims
+        // console.log('[Documents] User not found in database, creating user...');
         const userData = {
           id: userId,
           email: req.user.claims.email || `${userId}@unknown.com`,
@@ -231,25 +230,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         user = await storage.upsertUser(userData);
-        console.log('[Documents] User created successfully:', user.id);
-      } else {
-        console.log('[Documents] User exists in database:', user.id);
+        // console.log('[Documents] User created successfully:', user.id);
       }
+      // else {
+        // console.log('[Documents] User exists in database:', user.id);
+      // }
 
       // If folderId provided, verify it exists and user owns it
       if (folderId) {
-        console.log('[Documents] Checking folder access for folderId:', folderId);
+        // console.log('[Documents] Checking folder access for folderId:', folderId);
         try {
           const userFolders = await storage.getFolders(userId);
-          console.log('[Documents] User folders:', userFolders.length);
+          // console.log('[Documents] User folders:', userFolders.length);
           const folderExists = userFolders.some(f => f.id === folderId);
           if (!folderExists) {
-            console.log('[Documents] Folder not found, returning 404');
+            // console.log('[Documents] Folder not found, returning 404'); // Optional: keep this log
             return res.status(404).json({ message: "Folder not found or access denied" });
           }
-          console.log('[Documents] Folder access verified');
+          // console.log('[Documents] Folder access verified');
         } catch (folderError) {
-          console.error('[Documents] Error checking folders:', folderError);
+          console.error('[Documents] Error checking folders:', folderError); // Keep this error log
           throw folderError;
         }
       }
@@ -262,33 +262,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPublic: false
       };
 
-      console.log('[Documents] Document payload:', newDocumentPayload);
-      console.log('[Documents] About to call storage.createDocument...');
+      // console.log('[Documents] Document payload:', newDocumentPayload);
+      // console.log('[Documents] About to call storage.createDocument...');
       
       const createdDocument = await storage.createDocument(newDocumentPayload);
       
-      console.log('[Documents] Document created successfully:', createdDocument);
-      console.log('[Documents] Fetching document details...');
+      // console.log('[Documents] Document created successfully:', createdDocument.id); // Simplified log
+      // console.log('[Documents] Fetching document details...');
 
       // Return the created document with author info by calling getDocument
       const documentWithDetails = await storage.getDocument(createdDocument.id, userId);
 
       if (!documentWithDetails) {
-        console.log('[Documents] Failed to retrieve created document details');
+        console.error('[Documents] Failed to retrieve created document details for id:', createdDocument.id); // Keep and make specific
         return res.status(500).json({ message: "Failed to retrieve created document details" });
       }
 
-      console.log('[Documents] Returning document with details:', documentWithDetails.id);
+      // console.log('[Documents] Returning document with details:', documentWithDetails.id); // Simplified log
       res.status(201).json(documentWithDetails);
-    } catch (error) {
-      console.error('[Documents] ===== DETAILED ERROR =====');
-      console.error('[Documents] Error type:', typeof error);
-      console.error('[Documents] Error name:', error?.name);
-      console.error('[Documents] Error message:', error?.message);
-      console.error('[Documents] Error code:', error?.code);
-      console.error('[Documents] Error stack:', error?.stack);
-      console.error('[Documents] Full error object:', error);
-      console.error('[Documents] ===== END ERROR DEBUG =====');
+    } catch (error: any) { // Type error as any for easier property access
+      // console.error('[Documents] ===== DETAILED ERROR ====='); // Removed section
+      // console.error('[Documents] Error type:', typeof error);
+      // console.error('[Documents] Error name:', error?.name);
+      // console.error('[Documents] Error message:', error?.message);
+      // console.error('[Documents] Error code:', error?.code);
+      // console.error('[Documents] Error stack:', error?.stack);
+      // console.error('[Documents] Full error object:', error);
+      // console.error('[Documents] ===== END ERROR DEBUG =====');
+      console.error('[Documents] Error creating document:', error.message, error.stack, error); // Consolidated error log
       res.status(500).json({ message: "Failed to create document" });
     }
   });
@@ -298,6 +299,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const documentId = parseInt(req.params.id);
       const updates = req.body;
+
+      // The following logs were already removed/commented in a previous step, ensuring they stay that way.
+      // console.log(`[API PATCH /api/documents/:id] Document ID: ${documentId}, User ID: ${userId}`);
+      // console.log('[API PATCH /api/documents/:id] Incoming updates:', JSON.stringify(updates, (key, value) => key === 'content' ? `String with length ${value?.length}` : value));
+      // if (updates.content !== undefined) {
+      //   console.log('[API PATCH /api/documents/:id] Updates content length:', updates.content?.length);
+      // }
       
       delete updates.id;
       delete updates.authorId;
@@ -306,6 +314,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       updates.updatedAt = new Date();
 
       const updatedDocument = await storage.updateDocument(documentId, userId, updates);
+      // console.log('[API PATCH /api/documents/:id] Raw result from storage.updateDocument:', updatedDocument);
+
 
       if (!updatedDocument) {
         return res.status(404).json({ message: "Document not found or update failed" });
@@ -314,12 +324,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentWithDetails = await storage.getDocument(documentId, userId);
 
       if (!documentWithDetails) {
+        console.error(`[API PATCH /api/documents/:id] Failed to retrieve document details after update for ID: ${documentId}`); // Keep this error
         return res.status(500).json({ message: "Failed to retrieve updated document details" });
       }
 
+      // console.log(`[API PATCH /api/documents/:id] Successfully updated and retrieved document: ID ${documentWithDetails.id}, UpdatedAt ${documentWithDetails.updatedAt}`);
       res.json(documentWithDetails);
-    } catch (error) {
-      console.error("Error updating document:", error);
+    } catch (error: any) { // Typed as any
+      console.error(`[API PATCH /api/documents/:id] Error updating document: ${error.message}`, error.stack, error); // Keep this error
       res.status(500).json({ message: "Failed to update document" });
     }
   });

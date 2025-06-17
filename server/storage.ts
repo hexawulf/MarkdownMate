@@ -125,6 +125,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDocument(id: number, userId: string, updates: Partial<UpdateDocument>): Promise<Document | undefined> {
+    // console.log(`[Storage updateDocument] Document ID: ${id}, User ID: ${userId}`);
+    // console.log('[Storage updateDocument] Incoming updates:', JSON.stringify(updates, (key, value) => key === 'content' ? `String with length ${value?.length}` : value));
+    // if (updates.content !== undefined) {
+    //   console.log('[Storage updateDocument] Updates content length:', updates.content?.length);
+    // }
+
     const [updatedDocument] = await db
       .update(documents)
       .set({ ...updates, updatedAt: new Date() })
@@ -135,6 +141,8 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .returning();
+
+    // console.log('[Storage updateDocument] Result from db.update:', updatedDocument);
     return updatedDocument;
   }
 
