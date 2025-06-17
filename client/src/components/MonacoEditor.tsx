@@ -33,13 +33,14 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
 
   // Auto-save mutation
   const autoSaveMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async (newContent: string) => {
       if (!documentId) return;
-      await apiRequest("PATCH", `/api/documents/${documentId}`, { content });
+      await apiRequest("PATCH", `/api/documents/${documentId}`, { content: newContent });
+      return newContent;
     },
-    onSuccess: () => {
+    onSuccess: (returnedData, variables) => {
       setAutoSaveStatus("Auto-saved");
-      lastSavedContent.current = content;
+      lastSavedContent.current = variables;
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -75,7 +76,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
       }
 
       // documentId is the prop passed to MonacoEditor
-      if (currentContentValue !== lastSavedContent.current && documentId) {
+      if (documentId && currentContentValue !== lastSavedContent.current) {
         setAutoSaveStatus("Saving...");
         autoSaveMutation.mutate(currentContentValue);
       }
