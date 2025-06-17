@@ -29,17 +29,11 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
 
   // Initialize lastSavedContent when document loads
   useEffect(() => {
-    // console.log('[MonacoEditor Sync] useEffect for lastSavedContent triggered.');
-    // console.log('[MonacoEditor Sync] documentId:', documentId, 'Store content length:', content?.length);
-
-    if (documentId && content !== undefined) {
-      // console.log('[MonacoEditor Sync] Before update - lastSavedContent.current (length):', lastSavedContent.current?.length);
+    // Only sync lastSavedContent when we have actual content from a loaded document
+    if (documentId && content !== undefined && content !== "") {
       lastSavedContent.current = content;
-      // console.log('[MonacoEditor Sync] After update - lastSavedContent.current (length):', lastSavedContent.current?.length);
+      console.log('[MonacoEditor Sync] lastSavedContent updated to length:', content.length);
     }
-    // else {
-    //   console.log('[MonacoEditor Sync] Conditions not met to update lastSavedContent.current. documentId:', documentId, 'content is undefined:', content === undefined);
-    // }
   }, [documentId, content]); // 'content' is from useEditorStore()
 
   // WebSocket for real-time collaboration
