@@ -11,8 +11,26 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Plus, Search, FileText, Folder, X } from "lucide-react";
-import type { Document, Folder as FolderType } from "@shared/schema";
+import { Plus, Search, FileText, Folder, X, Trash2, Edit3 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+  // ContextMenuSeparator, // Not used in this pass, but available
+} from "@/components/ui/context-menu";
+import type { Document, Folder as FolderType, DocumentWithDetails } from "@shared/schema";
+import { useEditorStore } from "@/stores/editorStore";
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -29,13 +47,129 @@ const createFolderSchema = z.object({
   parentId: z.number().optional(),
 });
 
+// Custom hook for deleting a document
+const useDeleteDocument = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation(); // Get setLocation for redirect
+
+  return useMutation({
+    mutationFn: async (documentId: number) => {
+      await apiRequest("DELETE", `/api/documents/${documentId}`);
+      return documentId; // Pass documentId to onSuccess and onMutate context
+    },
+    onMutate: async (deletedDocumentId) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["/api/documents"] });
+
+      // Snapshot the previous value
+      const previousDocuments = queryClient.getQueryData<Document[]>(["/api/documents"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/documents"], (oldData?: Document[]) =>
+        oldData ? oldData.filter(doc => doc.id !== deletedDocumentId) : []
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousDocuments, deletedDocumentId };
+    },
+    onError: (err, _deletedDocumentId, context) => {
+      if (context?.previousDocuments) {
+        queryClient.setQueryData(["/api/documents"], context.previousDocuments);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete document. Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: (deletedDocumentId) => {
+      toast({
+        title: "Success",
+        description: "Document deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+
+      // Handle deleting current document
+      const currentPath = window.location.pathname; // Using window.location.pathname for current path
+      const currentDocIdStr = currentPath.startsWith('/document/') ? currentPath.split('/')[2] : null;
+      if (currentDocIdStr) {
+        const currentDocId = parseInt(currentDocIdStr, 10);
+        if (deletedDocumentId === currentDocId) {
+          setLocation('/');
+        }
+      }
+    },
+  });
+};
+
+// Custom hook for renaming a document
+const useRenameDocument = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [location] = useLocation();
+  const { currentDocument, setCurrentDocument } = useEditorStore();
+
+  return useMutation({
+    mutationFn: async ({ documentId, title }: { documentId: number; title: string }) => {
+      await apiRequest("PATCH", `/api/documents/${documentId}`, { title });
+      return { documentId, title };
+    },
+    onMutate: async ({ documentId, title }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/documents"] });
+      const previousDocuments = queryClient.getQueryData<Document[]>(["/api/documents"]);
+      const oldDocument = previousDocuments?.find(doc => doc.id === documentId);
+      const oldTitle = oldDocument?.title;
+
+      queryClient.setQueryData(["/api/documents"], (oldData?: Document[]) =>
+        oldData?.map(doc =>
+          doc.id === documentId ? { ...doc, title } : doc
+        ) || []
+      );
+      return { previousDocuments, documentId, oldTitle };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousDocuments) {
+        queryClient.setQueryData(["/api/documents"], context.previousDocuments);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to rename document. Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: ({ documentId, title }) => {
+      toast({
+        title: "Success",
+        description: "Document renamed successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+
+      // Update editor store if the renamed document is the current one
+      const currentDocIdPath = location.startsWith('/document/') ? location.split('/')[2] : null;
+      if (currentDocIdPath) {
+        const currentDocId = parseInt(currentDocIdPath, 10);
+        if (documentId === currentDocId && currentDocument) {
+          setCurrentDocument({ ...currentDocument, title });
+        }
+      }
+    },
+  });
+};
+
 export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
   const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [createDocumentOpen, setCreateDocumentOpen] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [editingDocumentId, setEditingDocumentId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>(""); // This is the live title being edited
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const deleteMutation = useDeleteDocument();
+  const renameMutation = useRenameDocument();
 
   // Fetch documents
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
@@ -144,8 +278,74 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
   };
 
   const handleDocumentClick = (document: Document) => {
+    // If already editing another document, submit before navigating
+    if (editingDocumentId && editingDocumentId !== document.id) {
+      handleRenameSubmit();
+    }
+    // If clicking the document that is currently being edited, do nothing
+    if (editingDocumentId === document.id) {
+        return;
+    }
     setLocation(`/document/${document.id}`);
     onClose();
+  };
+
+  // Unified rename submission logic
+  const handleRenameSubmitLogic = (docId: number, currentTitle: string) => {
+    const originalDocument = documents.find(doc => doc.id === docId);
+    if (!originalDocument) {
+      setEditingDocumentId(null); // Should not happen if docId is valid
+      return;
+    }
+
+    const trimmedTitle = currentTitle.trim();
+    if (!trimmedTitle) {
+      toast({
+        title: "Invalid Title",
+        description: "Document title cannot be empty.",
+        variant: "destructive",
+      });
+      setEditingTitle(originalDocument.title); // Revert input to original
+      // Do not close editing here, let user correct or escape
+      return false; // Indicate failure
+    }
+
+    if (trimmedTitle !== originalDocument.title) {
+      renameMutation.mutate({ documentId: docId, title: trimmedTitle });
+    }
+    setEditingDocumentId(null);
+    return true; // Indicate success or no change needed
+  };
+
+  // Called on blur or Enter
+  const handleRenameFinalize = () => {
+    if (!editingDocumentId) return;
+    handleRenameSubmitLogic(editingDocumentId, editingTitle);
+  };
+
+  const handleRenameKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      handleRenameFinalize();
+    } else if (event.key === "Escape") {
+      setEditingDocumentId(null);
+      // editingTitle will be reset when a new edit starts or if not needed
+    }
+  };
+
+  const handleRenameInitiate = (doc: Document) => {
+    if (editingDocumentId !== null && editingDocumentId !== doc.id) {
+      // Finalize any ongoing edit for a *different* document
+      // For the currently active editingTitle, which belongs to editingDocumentId
+      handleRenameSubmitLogic(editingDocumentId, editingTitle);
+    }
+    // Start editing the selected document
+    setEditingDocumentId(doc.id);
+    setEditingTitle(doc.title);
+  };
+
+  const handleDeleteInitiate = (doc: Document) => {
+    setDocumentToDelete(doc);
+    setDeleteDialogOpen(true);
   };
 
   const recentDocuments = documents.slice(0, 5);
@@ -233,21 +433,76 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                   </div>
                 ) : displayedDocuments.length > 0 ? (
                   displayedDocuments.map((document) => (
-                    <div
-                      key={document.id}
-                      onClick={() => handleDocumentClick(document)}
-                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors"
-                    >
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-sidebar-foreground truncate">
-                          {document.title}
+                    <ContextMenuTrigger key={document.id}>
+                      <ContextMenuContent>
+                        <ContextMenuItem onSelect={() => handleRenameInitiate(document)}>
+                          Rename
+                        </ContextMenuItem>
+                        <ContextMenuItem onSelect={() => handleDeleteInitiate(document)}>
+                          Delete
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                      {/* Main clickable div for navigation and inline editing display */}
+                      <div
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-sidebar-accent group cursor-pointer transition-colors"
+                        onClick={() => handleDocumentClick(document)}
+                        // onContextMenu={(e) => e.preventDefault()} // Already handled by ContextMenuTrigger
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            {editingDocumentId === document.id ? (
+                              <Input
+                                type="text"
+                                value={editingTitle}
+                                onChange={(e) => setEditingTitle(e.target.value)}
+                                onBlur={handleRenameFinalize} // Use the unified finalize handler
+                                onKeyDown={handleRenameKeyDown}
+                                autoFocus
+                                className="h-7 text-sm p-1 bg-transparent border-blue-500 focus:ring-0" // Style for inline edit
+                                onClick={(e) => e.stopPropagation()} // Prevent navigation
+                              />
+                            ) : (
+                              <>
+                                <div className="text-sm font-medium text-sidebar-foreground truncate">
+                                  {document.title}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(document.updatedAt!).toLocaleDateString()}
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(document.updatedAt!).toLocaleDateString()}
+                        {/* Icons container - shown on group hover */}
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          {editingDocumentId !== document.id && ( // Show edit icon only if not currently editing this item
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRenameInitiate(document); // Use the new handler
+                              }}
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteInitiate(document); // Use the new handler
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
+                    </ContextMenuTrigger>
                   ))
                 ) : (
                   <div className="text-sm text-muted-foreground">
@@ -256,7 +511,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                 )}
               </div>
             </div>
-            
+
             {/* Folders */}
             {!searchQuery && (
               <div>
@@ -300,7 +555,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                     </DialogContent>
                   </Dialog>
                 </div>
-                
+
                 <div className="space-y-1">
                   {foldersLoading ? (
                     <div className="space-y-2">
@@ -327,6 +582,31 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
           </div>
         </div>
       </aside>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the document
+              "{documentToDelete?.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDocumentToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (documentToDelete) {
+                  deleteMutation.mutate(documentToDelete.id);
+                }
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
