@@ -17,7 +17,9 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
   const { theme } = useTheme();
   // const { toast } = useToast(); // toast is not used in the new fetch-based save logic directly
   const editorRef = useRef<any>(null);
-  const lastSavedContent = useRef<string>("");
+  const lastSavedContent = useRef<string | undefined>(undefined);
+  // Track if we've synced the loaded document content yet
+  const hasInitializedRef = useRef<number | null>(null); // Add this line
 
   const {
     content, 
@@ -28,19 +30,18 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
   } = useEditorStore();
 
   // Initialize lastSavedContent when document loads
-  useEffect(() => {
-    // console.log('[MonacoEditor Sync] useEffect for lastSavedContent triggered.');
-    // console.log('[MonacoEditor Sync] documentId:', documentId, 'Store content length:', content?.length);
+  // Track if we've synced the loaded document content yet
+  // const hasInitializedRef = useRef<number | null>(null); // This line is defined above
 
-    if (documentId && content !== undefined) {
-      // console.log('[MonacoEditor Sync] Before update - lastSavedContent.current (length):', lastSavedContent.current?.length);
+  useEffect(() => {
+    // Only sync lastSavedContent once when document first loads
+    if (documentId && content !== undefined && hasInitializedRef.current !== documentId) {
+      // This is a newly loaded document - sync it regardless of content
       lastSavedContent.current = content;
-      // console.log('[MonacoEditor Sync] After update - lastSavedContent.current (length):', lastSavedContent.current?.length);
+      hasInitializedRef.current = documentId;
+      console.log('[MonacoEditor Sync] Initial document sync - lastSavedContent set to length:', content.length);
     }
-    // else {
-    //   console.log('[MonacoEditor Sync] Conditions not met to update lastSavedContent.current. documentId:', documentId, 'content is undefined:', content === undefined);
-    // }
-  }, [documentId, content]); // 'content' is from useEditorStore()
+  }, [documentId, content]);
 
   // WebSocket for real-time collaboration
   const { sendMessage, isConnected } = useWebSocket(documentId);
