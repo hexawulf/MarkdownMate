@@ -1,12 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react"; // Added useMemo
 import { Editor } from "@monaco-editor/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useEditorStore } from "@/stores/editorStore";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
+// import { useToast } from "@/hooks/use-toast"; // useToast seems unused with fetch-based save
+// import { useMutation, useQueryClient } from "@tanstack/react-query"; // No longer needed for auto-save
+// import { apiRequest } from "@/lib/queryClient"; // No longer needed for auto-save
+// import { isUnauthorizedError } from "@/lib/authUtils"; // No longer needed for auto-save, direct fetch handles errors
 import { debounce } from "lodash-es";
 
 interface MonacoEditorProps {
@@ -15,12 +15,11 @@ interface MonacoEditorProps {
 
 export default function MonacoEditor({ documentId }: MonacoEditorProps) {
   const { theme } = useTheme();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  // const { toast } = useToast(); // toast is not used in the new fetch-based save logic directly
   const editorRef = useRef<any>(null);
   const lastSavedContent = useRef<string>("");
-  
-  const { 
+
+  const {
     content, 
     setContent, 
     setAutoSaveStatus
@@ -28,67 +27,98 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
     // updateCharCount  // No longer needed as setContent handles it
   } = useEditorStore();
 
+  // Initialize lastSavedContent when document loads
+  useEffect(() => {
+    // console.log('[MonacoEditor Sync] useEffect for lastSavedContent triggered.');
+    // console.log('[MonacoEditor Sync] documentId:', documentId, 'Store content length:', content?.length);
+
+    if (documentId && content !== undefined) {
+      // console.log('[MonacoEditor Sync] Before update - lastSavedContent.current (length):', lastSavedContent.current?.length);
+      lastSavedContent.current = content;
+      // console.log('[MonacoEditor Sync] After update - lastSavedContent.current (length):', lastSavedContent.current?.length);
+    }
+    // else {
+    //   console.log('[MonacoEditor Sync] Conditions not met to update lastSavedContent.current. documentId:', documentId, 'content is undefined:', content === undefined);
+    // }
+  }, [documentId, content]); // 'content' is from useEditorStore()
+
   // WebSocket for real-time collaboration
   const { sendMessage, isConnected } = useWebSocket(documentId);
 
-  // Auto-save mutation
-  const autoSaveMutation = useMutation({
-    mutationFn: async (newContent: string) => {
-      if (!documentId) return;
-      await apiRequest("PATCH", `/api/documents/${documentId}`, { content: newContent });
-      return newContent;
-    },
-    onSuccess: (returnedData, variables) => {
-      setAutoSaveStatus("Auto-saved");
-      lastSavedContent.current = variables;
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      setAutoSaveStatus("Save failed");
-      toast({
-        title: "Auto-save failed",
-        description: "Your changes could not be saved automatically",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Debounced auto-save function
-  const debouncedAutoSave = useRef(
-    debounce((currentContentValue: string) => {
-      // Get the LATEST value of isCreatingNewDocument from the store
+  const debouncedSave = useMemo(() => {
+    return debounce((currentContentValue: string) => {
+      const currentDocumentId = documentId;
       const isCurrentlyCreating = useEditorStore.getState().isCreatingNewDocument;
 
+      // console.log('[Debounce Check] isCreatingNewDocument:', isCurrentlyCreating);
       if (isCurrentlyCreating) {
-        // Optional: log that save is skipped
-        // console.log("Auto-save skipped: isCreatingNewDocument is true.");
+        console.log("Auto-save skipped: new document not yet created");
         return;
       }
 
-      // documentId is the prop passed to MonacoEditor
-      if (documentId && currentContentValue !== lastSavedContent.current) {
-        setAutoSaveStatus("Saving...");
-        autoSaveMutation.mutate(currentContentValue);
+      // console.log('[Debounce Check] documentId:', currentDocumentId);
+      if (currentDocumentId === null || currentDocumentId === undefined) {
+        // console.log("Auto-save skipped: documentId is null or undefined.");
+        return;
       }
-    }, 2000)
-  ).current;
+
+      // console.log('[Debounce Check] currentContentValue (length):', currentContentValue?.length);
+      // console.log('[Debounce Check] lastSavedContent.current (length):', lastSavedContent.current?.length);
+
+      if (currentContentValue === lastSavedContent.current) {
+        // console.log("Auto-save skipped: content unchanged."); // This one can be noisy, but useful. Optional to keep.
+        return;
+      }
+
+      console.log('Autosave triggered for document:', currentDocumentId);
+      useEditorStore.getState().setAutoSaveStatus('Saving...');
+
+      fetch(`/api/documents/${currentDocumentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: currentContentValue })
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('Autosave successful. Status:', response.status);
+          useEditorStore.getState().setAutoSaveStatus('Auto-saved');
+          lastSavedContent.current = currentContentValue; // Update lastSavedContent on successful save
+          return response.json();
+        } else {
+          console.error('Autosave failed. Status:', response.status);
+          useEditorStore.getState().setAutoSaveStatus('Save failed');
+          // Attempt to log error response body
+          response.json().then(data => {
+            console.error('Autosave error response data:', data);
+          }).catch(() => {
+            response.text().then(textData => {
+              console.error('Autosave error response text:', textData);
+            });
+          });
+          throw new Error(`Autosave failed with status: ${response.status}`);
+        }
+      })
+      .then(data => {
+        if (data) {
+          console.log('Autosave response data:', data);
+          // Potentially update other state based on response if needed
+        }
+      })
+      .catch(error => {
+        console.error('Autosave error:', error);
+        // Ensure status is set to failed if not already by a non-ok response
+        if (useEditorStore.getState().autoSaveStatus !== 'Save failed') {
+           useEditorStore.getState().setAutoSaveStatus('Save failed');
+        }
+      });
+    }, 2000);
+  }, [documentId]); // documentId is a dependency for debouncedSave if it's used directly from props inside
 
   const handleEditorChange = (value: string | undefined) => {
     if (value === undefined) return;
     
-    setContent(value); // This will now also update word and char counts in the store
-    // updateWordCount(value); // Removed
-    // updateCharCount(value); // Removed
+    setContent(value);
+    // console.log('Content changed:', value); // Removed as per subtask requirement
     
     // Send real-time update
     if (isConnected && documentId) {
@@ -103,7 +133,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
     }
     
     // Auto-save
-    debouncedAutoSave(value);
+    debouncedSave(value);
   };
 
   const handleEditorMount = (editor: any, monaco: any) => {
