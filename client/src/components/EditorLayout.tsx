@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext"; // Changed import
 import { useTheme } from "@/components/ThemeProvider";
-import { Info, Upload, Download as ExportIcon } from "lucide-react"; // Changed Download to ExportIcon
+import { Info, Upload, Download as ExportIcon, ArrowLeft } from "lucide-react"; // Changed Download to ExportIcon
 import AboutModal from "@/components/AboutModal";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast"; // Import useToast
 import { Button } from "@/components/ui/button";
 import ImportDialog from "@/components/ImportDialog"; // Added import
@@ -24,10 +24,11 @@ import {
   Moon, 
   // Download, // Replaced by ExportIcon or Upload
   Share, // Share icon is currently used for Export button, will be replaced
-  Eye, 
-  Edit, 
-  Columns, 
-  Users
+  Eye,
+  Edit,
+  Columns,
+  Users,
+  // ArrowLeft // Already added to the other import
 } from "lucide-react";
 
 type ViewMode = "split" | "editor" | "preview";
@@ -200,6 +201,14 @@ export default function EditorLayout() {
           >
             <Menu className="w-5 h-5" />
           </Button>
+
+          {documentId && (
+            <Link href="/editor" aria-label="Back to editor">
+              <Button variant="ghost" size="icon" className="mr-2 text-foreground hover:bg-muted">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+          )}
           
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
