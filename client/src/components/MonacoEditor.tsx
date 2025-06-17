@@ -17,7 +17,9 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
   const { theme } = useTheme();
   // const { toast } = useToast(); // toast is not used in the new fetch-based save logic directly
   const editorRef = useRef<any>(null);
-  const lastSavedContent = useRef<string>("");
+  const lastSavedContent = useRef<string | undefined>(undefined);
+  // Track if we've synced the loaded document content yet
+  const hasInitializedRef = useRef<number | null>(null); // Add this line
 
   const {
     content, 
@@ -28,13 +30,18 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
   } = useEditorStore();
 
   // Initialize lastSavedContent when document loads
+  // Track if we've synced the loaded document content yet
+  // const hasInitializedRef = useRef<number | null>(null); // This line is defined above
+
   useEffect(() => {
-    // Only sync lastSavedContent when we have actual content from a loaded document
-    if (documentId && content !== undefined && content !== "") {
+    // Only sync lastSavedContent once when document first loads
+    if (documentId && content !== undefined && hasInitializedRef.current !== documentId) {
+      // This is a newly loaded document - sync it regardless of content
       lastSavedContent.current = content;
-      console.log('[MonacoEditor Sync] lastSavedContent updated to length:', content.length);
+      hasInitializedRef.current = documentId;
+      console.log('[MonacoEditor Sync] Initial document sync - lastSavedContent set to length:', content.length);
     }
-  }, [documentId, content]); // 'content' is from useEditorStore()
+  }, [documentId, content]);
 
   // WebSocket for real-time collaboration
   const { sendMessage, isConnected } = useWebSocket(documentId);
