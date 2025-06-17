@@ -40,6 +40,7 @@ export default function EditorLayout() {
   const { toast } = useToast(); // Initialize toast
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [collaborationPanelOpen, setCollaborationPanelOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
@@ -64,6 +65,13 @@ export default function EditorLayout() {
   const documentId = location.startsWith("/document/") 
     ? parseInt(location.split("/")[2]) 
     : null;
+
+  // Force sidebar open on document pages
+  useEffect(() => {
+    if (documentId) {
+      setSidebarOpen(true);
+    }
+  }, [documentId]);
 
   // Mutation for creating new document
   const createDocumentMutation = useMutation({
@@ -200,14 +208,16 @@ export default function EditorLayout() {
       {/* Header */}
       <header className="bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden text-foreground hover:bg-muted"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+          {!documentId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-foreground hover:bg-muted"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
 
           {documentId && (
             <Link href="/editor" aria-label="Back to editor">
@@ -338,7 +348,7 @@ export default function EditorLayout() {
         {/* Sidebar */}
         <DocumentSidebar 
           isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)}
+          onClose={documentId ? () => {} : () => setSidebarOpen(false)}
         />
 
         {/* Main Editor Area */}
