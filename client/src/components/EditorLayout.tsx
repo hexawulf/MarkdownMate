@@ -55,7 +55,8 @@ export default function EditorLayout() {
     setContent,
     autoSaveStatus,
     wordCount,
-    charCount 
+    charCount,
+    setIsCreatingNewDocument // Added action
   } = useEditorStore();
 
   // Extract document ID from URL
@@ -83,6 +84,7 @@ export default function EditorLayout() {
         description: `Document "${newDocument.title}" created and imported successfully.`,
         variant: "default",
       });
+      setIsCreatingNewDocument(false); // Reset flag
     },
     onError: (error) => {
       console.error("Error creating document:", error);
@@ -91,6 +93,7 @@ export default function EditorLayout() {
         description: "Could not create a new document. Please try again.",
         variant: "destructive",
       });
+      setIsCreatingNewDocument(false); // Reset flag
     },
   });
 
@@ -105,6 +108,7 @@ export default function EditorLayout() {
         ? importSource.filename.replace(/\.[^/.]+$/, "") // Remove file extension
         : "Imported Document";
       
+      setIsCreatingNewDocument(true); // Set flag before mutation
       // Create new document with imported content
       createDocumentMutation.mutate({
         title,

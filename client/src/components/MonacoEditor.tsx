@@ -64,10 +64,20 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
 
   // Debounced auto-save function
   const debouncedAutoSave = useRef(
-    debounce((content: string) => {
-      if (content !== lastSavedContent.current && documentId) {
+    debounce((currentContentValue: string) => {
+      // Get the LATEST value of isCreatingNewDocument from the store
+      const isCurrentlyCreating = useEditorStore.getState().isCreatingNewDocument;
+
+      if (isCurrentlyCreating) {
+        // Optional: log that save is skipped
+        // console.log("Auto-save skipped: isCreatingNewDocument is true.");
+        return;
+      }
+
+      // documentId is the prop passed to MonacoEditor
+      if (currentContentValue !== lastSavedContent.current && documentId) {
         setAutoSaveStatus("Saving...");
-        autoSaveMutation.mutate(content);
+        autoSaveMutation.mutate(currentContentValue);
       }
     }, 2000)
   ).current;
