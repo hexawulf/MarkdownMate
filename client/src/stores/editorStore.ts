@@ -7,11 +7,13 @@ interface EditorState {
   autoSaveStatus: "Saved" | "Saving..." | "Auto-saved" | "Save failed";
   wordCount: number;
   charCount: number;
+  isCreatingNewDocument: boolean; // Added flag
   
   // Actions
   setCurrentDocument: (document: DocumentWithDetails | null) => void;
   setContent: (content: string) => void;
   setAutoSaveStatus: (status: EditorState["autoSaveStatus"]) => void;
+  setIsCreatingNewDocument: (isCreating: boolean) => void; // Added action
   // updateWordCount and updateCharCount methods will be removed
 }
 
@@ -21,6 +23,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   autoSaveStatus: "Saved",
   wordCount: 0,
   charCount: 0,
+  isCreatingNewDocument: false, // Initialized flag
   
   setCurrentDocument: (document) => set({ currentDocument: document }),
   setContent: (content) => {
@@ -29,6 +32,7 @@ export const useEditorStore = create<EditorState>((set) => ({
     set({ content, wordCount: words, charCount: chars });
   },
   setAutoSaveStatus: (autoSaveStatus) => set({ autoSaveStatus }),
+  setIsCreatingNewDocument: (isCreating) => set({ isCreatingNewDocument: isCreating }), // Implemented action
   
   // updateWordCount and updateCharCount implementations are removed
   // updateWordCount: (content) => {
