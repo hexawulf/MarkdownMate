@@ -128,7 +128,7 @@ export default function EditorLayout() {
 
   // Fetch current document
   const { data: document, isLoading } = useQuery({
-    queryKey: ["/api/documents", documentId],
+    queryKey: [`/api/documents/${documentId}`],
     enabled: !!documentId,
   });
 
