@@ -441,7 +441,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
 
     if (viewMode === 'all' && !selectedFolder) {
       // If in 'all' mode (root view), show only documents without a folderId (or folderId is null)
-      return documents.filter(doc => !doc.folderId);
+      return documents;
     }
 
     // Fallback or default: show root documents if no specific view active,
@@ -529,7 +529,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                   } else if (viewMode === 'folder' && selectedFolder) {
                     listTitle = selectedFolder.name; // Show folder name
                   } else if (viewMode === 'all' && !selectedFolder) {
-                    listTitle = "Root Documents"; // Or just "Documents" if preferred for root
+                    listTitle = "All Documents"; // Or just "Documents" if preferred for root
                   }
                   return listTitle;
                 })()}
