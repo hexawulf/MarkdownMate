@@ -63,8 +63,35 @@ export default function EditorLayout() {
 
   // Extract document ID from URL
   const documentId = location.startsWith("/document/") 
-    ? parseInt(location.split("/")[2]) 
+  ? parseInt(location.split("/")[2], 10) || null
     : null;
+
+  // Set browser tab title based on current document
+  useEffect(() => {
+    if (currentDocument?.title) {
+      document.title = `${currentDocument.title} - MarkdownMate`;
+    } else if (documentId) {
+      document.title = "Loading... - MarkdownMate";
+    } else {
+      document.title = "MarkdownMate";
+    }
+  }, [currentDocument?.title, documentId]);
+
+  // Validate document ID and handle invalid URLs
+  useEffect(() => {
+    if (location.startsWith("/document/")) {
+      const idStr = location.split("/")[2];
+      if (!idStr || isNaN(parseInt(idStr, 10))) {
+        console.warn("Invalid document ID in URL:", idStr);
+        toast({
+          title: "Invalid Document ID",
+          description: "The document ID in the URL is invalid. Redirecting to editor.",
+          variant: "destructive",
+        });
+        setLocation("/editor");
+      }
+    }
+  }, [location, setLocation, toast]);
 
   // Force sidebar open on document pages
   useEffect(() => {
