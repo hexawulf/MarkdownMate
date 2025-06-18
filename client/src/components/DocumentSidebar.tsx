@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMemo, useState } from "react"; // Added useMemo here
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -27,10 +28,12 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
+  ContextMenuTrigger,
   // ContextMenuSeparator, // Not used in this pass, but available
 } from "@/components/ui/context-menu";
 import type { Document, Folder as FolderType, DocumentWithDetails } from "@shared/schema";
 import { useEditorStore } from "@/stores/editorStore";
+import MoveToFolderDialog from "./MoveToFolderDialog";
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -103,6 +106,66 @@ const useDeleteDocument = () => {
   });
 };
 
+// Custom hook for moving a document
+const useMoveDocument = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ documentId, folderId }: { documentId: number; folderId: number | null }) => {
+      await apiRequest("PATCH", `/api/documents/${documentId}`, { folderId });
+      return { documentId, folderId };
+    },
+    onMutate: async ({ documentId, folderId }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/documents"] });
+      const previousDocuments = queryClient.getQueryData<Document[]>(["/api/documents"]);
+
+      queryClient.setQueryData(["/api/documents"], (oldData?: Document[]) =>
+        oldData?.map(doc =>
+          doc.id === documentId ? { ...doc, folderId: folderId ?? undefined } : doc
+        ) || []
+      );
+      // Also update individual document queries if they exist
+      await queryClient.cancelQueries({ queryKey: ["/api/documents", documentId] });
+      const previousDocument = queryClient.getQueryData<DocumentWithDetails>(["/api/documents", documentId]);
+       if (previousDocument) {
+        queryClient.setQueryData<DocumentWithDetails>(["/api/documents", documentId], {
+          ...previousDocument,
+          folderId: folderId ?? undefined,
+          // If you have folder details embedded, you might need to update that too or refetch
+        });
+      }
+
+      return { previousDocuments, previousDocument, documentId };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousDocuments) {
+        queryClient.setQueryData(["/api/documents"], context.previousDocuments);
+      }
+      if (context?.previousDocument && context.documentId) {
+        queryClient.setQueryData(["/api/documents", context.documentId], context.previousDocument);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to move document. Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: ({ documentId, folderId }) => { // Corrected: removed underscore from folderId
+      toast({
+        title: "Success",
+        description: "Document moved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/folders"] }); // Invalidate folders if they show document counts
+      queryClient.invalidateQueries({ queryKey: ["/api/documents", documentId] });
+
+      // If you have a specific view for folders, you might need to invalidate that too
+      // e.g., queryClient.invalidateQueries({ queryKey: ["/api/folders", folderId] });
+    },
+  });
+};
+
 // Custom hook for renaming a document
 const useRenameDocument = () => {
   const queryClient = useQueryClient();
@@ -166,10 +229,16 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const [editingDocumentId, setEditingDocumentId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>(""); // This is the live title being edited
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [documentToMove, setDocumentToMove] = useState<Document | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<FolderType | null>(null);
+  // viewMode can be 'all' (root, showing unfiled documents), 'folder' (showing documents in selectedFolder)
+  const [viewMode, setViewMode] = useState<'all' | 'folder'>('all');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const deleteMutation = useDeleteDocument();
   const renameMutation = useRenameDocument();
+  const moveMutation = useMoveDocument();
 
   // Fetch documents
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
@@ -343,13 +412,44 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
     setEditingTitle(doc.title);
   };
 
+  const handleFolderClick = (folder: FolderType) => {
+    setSelectedFolder(folder);
+    setViewMode('folder');
+    setSearchQuery(""); // Clear search when navigating folders
+  };
+
+  const handleMoveToFolderInitiate = (doc: Document) => {
+    setDocumentToMove(doc);
+    setMoveDialogOpen(true);
+  };
+
   const handleDeleteInitiate = (doc: Document) => {
     setDocumentToDelete(doc);
     setDeleteDialogOpen(true);
   };
 
-  const recentDocuments = documents.slice(0, 5);
-  const displayedDocuments = searchQuery ? searchResults : recentDocuments;
+  const displayedDocuments = useMemo(() => {
+    if (searchQuery) {
+      // If there's a search query, search results take precedence
+      return searchResults;
+    }
+
+    if (viewMode === 'folder' && selectedFolder) {
+      // If a folder is selected, filter documents by that folderId
+      return documents.filter(doc => doc.folderId === selectedFolder.id);
+    }
+
+    if (viewMode === 'all' && !selectedFolder) {
+      // If in 'all' mode (root view), show only documents without a folderId (or folderId is null)
+      return documents.filter(doc => !doc.folderId);
+    }
+
+    // Fallback or default: show root documents if no specific view active,
+    // or could be an empty array if no conditions met.
+    // This also covers the initial state before any interaction.
+    return documents.filter(doc => !doc.folderId);
+
+  }, [documents, searchResults, searchQuery, selectedFolder, viewMode]);
 
   if (!isOpen) return null;
 
@@ -422,7 +522,17 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
             {/* Recent Documents */}
             <div>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                {searchQuery ? "Search Results" : "Recent"}
+                {(() => {
+                  let listTitle = "Documents"; // Default title
+                  if (searchQuery) {
+                    listTitle = "Search Results";
+                  } else if (viewMode === 'folder' && selectedFolder) {
+                    listTitle = selectedFolder.name; // Show folder name
+                  } else if (viewMode === 'all' && !selectedFolder) {
+                    listTitle = "Root Documents"; // Or just "Documents" if preferred for root
+                  }
+                  return listTitle;
+                })()}
               </h3>
               <div className="space-y-1">
                 {documentsLoading ? (
@@ -432,7 +542,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                     ))}
                   </div>
                 ) : displayedDocuments.length > 0 ? (
-                  displayedDocuments.map((document) => (
+                  displayedDocuments.map((document) => ( // Ensure this 'document' is of type Document from schema
                     <ContextMenu key={document.id}>
                       <ContextMenuTrigger asChild>
                         {/* Main clickable div for navigation and inline editing display */}
@@ -499,6 +609,9 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                         <ContextMenuItem onSelect={() => handleRenameInitiate(document)}>
                           Rename
                         </ContextMenuItem>
+                        <ContextMenuItem onSelect={() => handleMoveToFolderInitiate(document)}>
+                          Move to Folder
+                        </ContextMenuItem>
                         <ContextMenuItem onSelect={() => handleDeleteInitiate(document)}>
                           Delete
                         </ContextMenuItem>
@@ -507,7 +620,11 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                   ))
                 ) : (
                   <div className="text-sm text-muted-foreground">
-                    {searchQuery ? "No documents found" : "No documents yet"}
+                    {searchQuery ? "No documents found" :
+                      (viewMode === 'folder' && selectedFolder) ? `No documents in ${selectedFolder.name}` :
+                      (viewMode === 'all' && !selectedFolder) ? "No documents in root" :
+                      "No documents yet"
+                    }
                   </div>
                 )}
               </div>
@@ -515,11 +632,27 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
 
             {/* Folders */}
             {!searchQuery && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Folders
-                  </h3>
+              <>
+                {/* All Documents / Root View Item */}
+                <div
+                  className={`flex items-center space-x-3 p-3 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors mb-3 ${
+                    viewMode === 'all' && !selectedFolder ? 'bg-sidebar-accent' : ''
+                  }`}
+                  onClick={() => {
+                    setSelectedFolder(null);
+                    setViewMode('all');
+                    setSearchQuery(""); // Clear search
+                  }}
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground" /> {/* Or a different icon like Layers / Inbox */}
+                  <span className="text-sm font-medium text-sidebar-foreground">All Documents</span>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Folders
+                    </h3>
                   <Dialog open={createFolderOpen} onOpenChange={setCreateFolderOpen}>
                     <DialogTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -568,10 +701,20 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                     folders.map((folder) => (
                       <div
                         key={folder.id}
-                        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors"
+                        className={`flex items-center justify-between p-3 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors ${ // Ensure justify-between
+                          viewMode === 'folder' && selectedFolder?.id === folder.id ? 'bg-sidebar-accent' : ''
+                        }`}
+                        onClick={() => handleFolderClick(folder)}
                       >
-                        <Folder className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-sidebar-foreground">{folder.name}</span>
+                        <div className="flex items-center space-x-3"> {/* Group icon and name */}
+                          <Folder className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-sidebar-foreground">{folder.name}</span>
+                        </div>
+                        {typeof folder.documentCount === 'number' && ( // Check if documentCount is available
+                          <span className="text-xs text-muted-foreground">
+                            ({folder.documentCount})
+                          </span>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -579,6 +722,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                   )}
                 </div>
               </div>
+            </>
             )}
           </div>
         </div>
@@ -608,6 +752,19 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <MoveToFolderDialog
+        isOpen={moveDialogOpen}
+        onClose={() => {
+          setMoveDialogOpen(false);
+          setDocumentToMove(null); // Reset the document to move
+        }}
+        document={documentToMove}
+        folders={folders} // Assuming 'folders' is the fetched list of folders
+        onMove={(documentId, folderId) => {
+          moveMutation.mutate({ documentId, folderId });
+        }}
+      />
     </>
   );
 }
