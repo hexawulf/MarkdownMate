@@ -12,7 +12,7 @@
 <br>
 
 <p align="center">
-  <img src="docs/screenshots/Screenshot_From_2025-06-18_14-21-35.png" alt="MarkdownMate Landing Page" width="800" />
+  <img src="docs/screenshots/landing-page.png" alt="MarkdownMate Landing Page" width="800" />
   <br>
   <em>MarkdownMate: Modern, collaborative markdown editing.</em>
 </p>
@@ -47,7 +47,7 @@ MarkdownMate is designed to provide a seamless and efficient markdown editing ex
 <br>
 
 <p align="center">
-  <img src="docs/screenshots/Screenshot_From_2025-06-18_14-21-05.png" alt="MarkdownMate Editor Interface" width="800" />
+  <img src="docs/screenshots/editor-interface.png" alt="MarkdownMate Editor Interface" width="800" />
   <br>
   <em>The MarkdownMate editor: Feature-rich and user-friendly.</em>
 </p>
