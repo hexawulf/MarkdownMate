@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMemo, useState } from "react"; // Added useMemo here
+import { useState, useEffect } from "react"; // Ensure useEffect is imported
+import { useMemo } from "react"; // Added useMemo here, useState removed as it's covered above
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -428,28 +428,57 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
     setDeleteDialogOpen(true);
   };
 
+  const handleAllDocumentsClick = () => {
+    setSelectedFolder(null);
+    setViewMode('all');
+    setSearchQuery(''); // Clear search query
+    // searchResults will automatically update via its useQuery hook when searchQuery changes.
+    // No direct setSearchResults([]) is needed if searchResults is managed by useQuery.
+    console.log('🔍 All Documents clicked - showing all documents. State after reset:', { selectedFolder: null, searchQuery: '', viewMode: 'all' });
+  };
+
   const displayedDocuments = useMemo(() => {
-    if (searchQuery) {
-      // If there's a search query, search results take precedence
+    // SEARCH MODE: Show search results
+    if (searchQuery && searchResults.length >= 0) { // Ensure searchResults is defined, even if empty
+      console.log('🔍 Filtering logic: Search mode active');
       return searchResults;
     }
 
+    // FOLDER MODE: Show documents in specific folder
     if (viewMode === 'folder' && selectedFolder) {
-      // If a folder is selected, filter documents by that folderId
+      console.log(`🔍 Filtering logic: Folder mode active for folder "${selectedFolder.name}" (ID: ${selectedFolder.id})`);
       return documents.filter(doc => doc.folderId === selectedFolder.id);
     }
 
+    // ALL DOCUMENTS MODE: Show everything (no filters)
+    // This condition is met when searchQuery is empty, and either viewMode is 'all'
+    // or selectedFolder is null (which handleAllDocumentsClick ensures).
     if (viewMode === 'all' && !selectedFolder) {
-      // If in 'all' mode (root view), show only documents without a folderId (or folderId is null)
+      console.log('🔍 Filtering logic: All Documents mode active, showing all documents:', documents.length);
       return documents;
     }
 
-    // Fallback or default: show root documents if no specific view active,
-    // or could be an empty array if no conditions met.
-    // This also covers the initial state before any interaction.
-    return documents.filter(doc => !doc.folderId);
-
+    // Fallback: This case should ideally not be reached if logic is correct.
+    // It implies a state where searchQuery is empty, but viewMode is not 'all'
+    // AND selectedFolder is also null. Or, viewMode is 'folder' but selectedFolder is null.
+    // This might happen during initial load or if state is inconsistent.
+    // For safety, returning all documents, but it's worth reviewing if this occurs.
+    console.log('🔍 Filtering logic: Fallback - returning all documents. Review if this state is expected.', { viewMode, selectedFolder, searchQuery });
+    return documents; // Default to all documents if no other condition met.
   }, [documents, searchResults, searchQuery, selectedFolder, viewMode]);
+
+  useEffect(() => {
+    console.log('🔍 DocumentSidebar State Update:', {
+      totalDocuments: documents.length,
+      displayedDocumentsCount: displayedDocuments.length,
+      selectedFolder: selectedFolder ? { id: selectedFolder.id, name: selectedFolder.name } : null,
+      searchQuery,
+      viewMode, // Added viewMode for better context
+      // Optionally, list some document titles for quick check, but be mindful of log size
+      // documentsSample: documents.slice(0, 3).map(d => ({ id: d.id, title: d.title, folderId: d.folderId })),
+      // displayedDocumentsSample: displayedDocuments.slice(0, 3).map(d => ({ id: d.id, title: d.title, folderId: d.folderId }))
+    });
+  }, [documents, displayedDocuments, selectedFolder, searchQuery, viewMode]); // Added viewMode to dependency array
 
   if (!isOpen) return null;
 
@@ -521,6 +550,9 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
           <div className="space-y-6">
             {/* Recent Documents */}
             <div>
+              <div className="text-xs text-muted-foreground mb-2 px-1"> {/* Added px-1 for slight padding if needed */}
+                Showing {displayedDocuments.length} of {documents.length} documents
+              </div>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
                 {(() => {
                   let listTitle = "Documents"; // Default title
@@ -636,15 +668,11 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                 {/* All Documents / Root View Item */}
                 <div
                   className={`flex items-center space-x-3 p-3 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors mb-3 ${
-                    viewMode === 'all' && !selectedFolder ? 'bg-sidebar-accent' : ''
+                    viewMode === 'all' && !selectedFolder && !searchQuery ? 'bg-sidebar-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                   }`}
-                  onClick={() => {
-                    setSelectedFolder(null);
-                    setViewMode('all');
-                    setSearchQuery(""); // Clear search
-                  }}
+                  onClick={handleAllDocumentsClick} // Use the new handler
                 >
-                  <FileText className="h-4 w-4 text-muted-foreground" /> {/* Or a different icon like Layers / Inbox */}
+                  <FileText className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-sidebar-foreground">All Documents</span>
                 </div>
 
