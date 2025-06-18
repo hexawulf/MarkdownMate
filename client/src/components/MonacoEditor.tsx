@@ -194,7 +194,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
           fontSize: 14,
           fontFamily: "JetBrains Mono, Menlo, Monaco, monospace",
           padding: { top: 16, bottom: 16 },
-          scrollBeyondLastLine: false,
+          scrollBeyondLastLine: true,
           automaticLayout: true,
           cursorBlinking: "smooth",
           cursorSmoothCaretAnimation: "on",
