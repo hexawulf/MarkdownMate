@@ -434,7 +434,7 @@ export default function EditorLayout() {
 
             {/* Preview Panel */}
             {(viewMode === "split" || viewMode === "preview") && (
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col overflow-y-auto">
                 <div className="bg-muted px-4 py-2 border-b border-border">
                   <h3 className="text-sm font-medium text-foreground">Preview</h3>
                 </div>
