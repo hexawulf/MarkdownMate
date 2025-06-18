@@ -433,23 +433,15 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                   </div>
                 ) : displayedDocuments.length > 0 ? (
                   displayedDocuments.map((document) => (
-                    <ContextMenuTrigger key={document.id}>
-                      <ContextMenuContent>
-                        <ContextMenuItem onSelect={() => handleRenameInitiate(document)}>
-                          Rename
-                        </ContextMenuItem>
-                        <ContextMenuItem onSelect={() => handleDeleteInitiate(document)}>
-                          Delete
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                      {/* Main clickable div for navigation and inline editing display */}
-                      <div
-                        className="flex items-center justify-between p-3 rounded-lg hover:bg-sidebar-accent group cursor-pointer transition-colors"
-                        onClick={() => handleDocumentClick(document)}
-                        // onContextMenu={(e) => e.preventDefault()} // Already handled by ContextMenuTrigger
-                      >
-                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
+                    <ContextMenu key={document.id}>
+                      <ContextMenuTrigger asChild>
+                        {/* Main clickable div for navigation and inline editing display */}
+                        <div
+                          className="flex items-center justify-between p-3 rounded-lg hover:bg-sidebar-accent group cursor-pointer transition-colors"
+                          onClick={() => handleDocumentClick(document)}
+                        >
+                          <div className="flex items-center space-x-3 flex-1 min-w-0">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
                           <div className="flex-1 min-w-0">
                             {editingDocumentId === document.id ? (
                               <Input
@@ -502,7 +494,16 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
                           </Button>
                         </div>
                       </div>
-                    </ContextMenuTrigger>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem onSelect={() => handleRenameInitiate(document)}>
+                          Rename
+                        </ContextMenuItem>
+                        <ContextMenuItem onSelect={() => handleDeleteInitiate(document)}>
+                          Delete
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
                   ))
                 ) : (
                   <div className="text-sm text-muted-foreground">
