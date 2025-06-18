@@ -66,8 +66,13 @@ export default function EditorLayout() {
   ? parseInt(location.split("/")[2], 10) || null
     : null;
 
-  // Set browser tab title based on current document
+  // Set browser tab title based on current document (with safety check)
   useEffect(() => {
+    // Only run in browser environment
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
     if (currentDocument?.title) {
       document.title = `${currentDocument.title} - MarkdownMate`;
     } else if (documentId) {
