@@ -30,10 +30,10 @@ const documentSessions = new Map<number, Set<{ ws: WebSocket; userId: string; cu
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   try {
-    await setupAuth(app);
+    await setupAuth(app); // Assuming setupAuth in firebaseAuth.ts handles its own logging or is updated
   } catch (error) {
-    console.error("[Auth] CRITICAL: Firebase Auth setup failed!", error);
-    console.warn("[Auth] Server is continuing with development mode auth behavior due to Firebase setup failure.");
+    logger.error("[Auth] CRITICAL: Firebase Auth setup failed in routes.ts!", { error });
+    logger.warn("[Auth] Server is continuing with development mode auth behavior due to Firebase setup failure.");
   }
 
   // Server-side fallback redirect for authenticated users.
@@ -43,10 +43,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (token) {
       try {
         await getAuth().verifyIdToken(token);
-        console.log('[Auth] User with valid token accessed root path. Redirecting to external editor.');
+        logger.info('[Auth] User with valid token accessed root path. Redirecting to external editor.', { ip: req.ip });
         res.redirect(302, 'https://markdown.piapps.dev/editor');
-      } catch (error) {
-        console.log('[Auth] Token verification failed for root path access. Proceeding to landing page.', error.message);
+      } catch (error: any) {
+        logger.info(`[Auth] Token verification failed for root path access. Proceeding to landing page. Error: ${error.message}`, { error, ip: req.ip });
         next();
       }
     } else {
@@ -57,16 +57,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Database test route - ADD THIS FOR DEBUGGING
   app.get('/api/db-test', async (req, res) => {
     try {
-      console.log('[DB Test] Testing database connection...');
-      console.log('[DB Test] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+      logger.info('[DB Test] Testing database connection...');
+      logger.info(`[DB Test] DATABASE_URL exists: ${!!process.env.DATABASE_URL}`);
       
       // Test basic connection
       const result = await db.select().from(users).limit(1);
-      console.log('[DB Test] Users query successful, count:', result.length);
+      logger.info(`[DB Test] Users query successful, count: ${result.length}`);
       
       // Test if tables exist by trying to select from documents table
       const docCount = await db.select().from(documents).limit(1);
-      console.log('[DB Test] Documents table accessible, count:', docCount.length);
+      logger.info(`[DB Test] Documents table accessible, count: ${docCount.length}`);
       
       res.json({ 
         message: "Database connection successful", 
@@ -75,16 +75,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         driver: "PostgreSQL",
         tablesAccessible: true
       });
-    } catch (error) {
-      console.error("[DB Test] Database connection failed:", error);
-      console.error("[DB Test] Error details:", {
+    } catch (error: any) {
+      logger.error("[DB Test] Database connection failed", {
+        error,
         name: error.name,
         message: error.message,
         code: error.code
       });
       res.status(500).json({ 
         message: "Database connection failed", 
-        error: error.message,
+        error: error.message, // Keep client-facing error concise
         code: error.code
       });
     }
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       user = await storage.upsertUser(devUser);
       return user;
     } catch (error) {
-      console.error("Failed to create dev user:", error);
+      logger.error("Failed to create dev user in routes.ts", { error });
       return devUser;
     }
   };
@@ -127,14 +127,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.upsertUser(userData);
       return user;
     } catch (error) {
-      console.error("Failed to upsert Firebase user:", error);
+      logger.error("Failed to upsert Firebase user in routes.ts", { error, userId: claims.sub });
       throw error;
     }
   };
 
   // Auth routes
   app.get('/user', devAuth, async (req: any, res: Response) => {
-    console.log('[/user] Handler invoked. req.user:', JSON.stringify(req.user, null, 2));
+    logger.debug('[/user] Handler invoked.', { user: req.user, ip: req.ip }); // Avoid logging full user object at info level
     try {
       if (process.env.NODE_ENV === 'development') {
         const user = await createDevUser();
@@ -149,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await upsertFirebaseUser(req.user.claims);
       res.json(user);
     } catch (error) {
-      console.error("Error fetching user:", error);
+      logger.error("Error fetching or upserting user in /user route (routes.ts)", { error, userId: req.user?.claims?.sub, ip: req.ip });
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
@@ -177,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(userDocuments);
       }
     } catch (error) {
-      console.error("Error fetching documents:", error);
+      logger.error("Error fetching documents in /api/documents (GET, routes.ts)", { error, userId: req.user?.claims?.sub, folderIdQuery, ip: req.ip });
       res.status(500).json({ message: "Failed to fetch documents" });
     }
   });
@@ -195,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(document);
     } catch (error) {
-      console.error("Error fetching document:", error);
+      logger.error(`Error fetching document ${documentId} in /api/documents/:id (GET, routes.ts)`, { error, userId: req.user?.claims?.sub, documentId, ip: req.ip });
       res.status(500).json({ message: "Failed to fetch document" });
     }
   });
@@ -249,8 +249,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           // console.log('[Documents] Folder access verified');
         } catch (folderError) {
-          console.error('[Documents] Error checking folders:', folderError); // Keep this error log
-          throw folderError;
+           logger.error('[Documents] Error checking folder access during document creation', { error: folderError, userId, folderId, ip: req.ip });
+           throw folderError; // Re-throw to be caught by the main catch block
         }
       }
       
@@ -274,22 +274,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentWithDetails = await storage.getDocument(createdDocument.id, userId);
 
       if (!documentWithDetails) {
-        console.error('[Documents] Failed to retrieve created document details for id:', createdDocument.id); // Keep and make specific
+         logger.error('[Documents] Failed to retrieve created document details after creation', { documentId: createdDocument.id, userId, ip: req.ip });
         return res.status(500).json({ message: "Failed to retrieve created document details" });
       }
 
       // console.log('[Documents] Returning document with details:', documentWithDetails.id); // Simplified log
       res.status(201).json(documentWithDetails);
-    } catch (error: any) { // Type error as any for easier property access
-      // console.error('[Documents] ===== DETAILED ERROR ====='); // Removed section
-      // console.error('[Documents] Error type:', typeof error);
-      // console.error('[Documents] Error name:', error?.name);
-      // console.error('[Documents] Error message:', error?.message);
-      // console.error('[Documents] Error code:', error?.code);
-      // console.error('[Documents] Error stack:', error?.stack);
-      // console.error('[Documents] Full error object:', error);
-      // console.error('[Documents] ===== END ERROR DEBUG =====');
-      console.error('[Documents] Error creating document:', error.message, error.stack, error); // Consolidated error log
+    } catch (error: any) {
+      logger.error('[Documents] Error creating document in /api/documents (POST, routes.ts)', { error, userId: req.user?.claims?.sub, body: req.body, ip: req.ip });
       res.status(500).json({ message: "Failed to create document" });
     }
   });
@@ -324,14 +316,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentWithDetails = await storage.getDocument(documentId, userId);
 
       if (!documentWithDetails) {
-        console.error(`[API PATCH /api/documents/:id] Failed to retrieve document details after update for ID: ${documentId}`); // Keep this error
+        logger.error(`[API PATCH /api/documents/:id] Failed to retrieve document details after update for ID: ${documentId}`, { userId, documentId, ip: req.ip });
         return res.status(500).json({ message: "Failed to retrieve updated document details" });
       }
 
       // console.log(`[API PATCH /api/documents/:id] Successfully updated and retrieved document: ID ${documentWithDetails.id}, UpdatedAt ${documentWithDetails.updatedAt}`);
       res.json(documentWithDetails);
-    } catch (error: any) { // Typed as any
-      console.error(`[API PATCH /api/documents/:id] Error updating document: ${error.message}`, error.stack, error); // Keep this error
+    } catch (error: any) {
+      logger.error(`[API PATCH /api/documents/:id] Error updating document ${documentId}`, { error, userId: req.user?.claims?.sub, documentId, body: req.body, ip: req.ip });
       res.status(500).json({ message: "Failed to update document" });
     }
   });
@@ -349,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(204).send();
     } catch (error) {
-      console.error("Error deleting document:", error);
+      logger.error(`Error deleting document ${documentId} in /api/documents/:id (DELETE, routes.ts)`, { error, userId: req.user?.claims?.sub, documentId, ip: req.ip });
       res.status(500).json({ message: "Failed to delete document" });
     }
   });
@@ -366,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const searchResults = await storage.searchDocuments(userId, query);
       res.json(searchResults);
     } catch (error) {
-      console.error("Error searching documents:", error);
+      logger.error("Error searching documents in /api/documents/search (routes.ts)", { error, userId: req.user?.claims?.sub, query, ip: req.ip });
       res.status(500).json({ message: "Failed to search documents" });
     }
   });
@@ -390,7 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(userFolders);
       }
     } catch (error) {
-      console.error("Error fetching folders:", error);
+      logger.error("Error fetching folders in /api/folders (GET, routes.ts)", { error, userId: req.user?.claims?.sub, parentIdQuery, ip: req.ip });
       res.status(500).json({ message: "Failed to fetch folders" });
     }
   });
@@ -432,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdFolder = await storage.createFolder(newFolderPayload);
       res.status(201).json(createdFolder);
     } catch (error) {
-      console.error("Error creating folder:", error);
+      logger.error("Error creating folder in /api/folders (POST, routes.ts)", { error, userId: req.user?.claims?.sub, body: req.body, ip: req.ip });
       res.status(500).json({ message: "Failed to create folder" });
     }
   });
@@ -464,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(204).send();
     } catch (error) {
-      console.error("Error deleting folder:", error);
+      logger.error(`Error deleting folder ${folderId} in /api/folders/:id (DELETE, routes.ts)`, { error, userId: req.user?.claims?.sub, folderId, ip: req.ip });
       res.status(500).json({ message: "Failed to delete folder" });
     }
   });
@@ -475,30 +467,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   wss.on('connection', (ws: WebSocket, req) => {
-    console.log('WebSocket connection established');
+    const clientIp = req.socket.remoteAddress;
+    logger.info('WebSocket connection established', { clientIp });
 
     ws.on('message', (data) => {
       try {
         const message = JSON.parse(data.toString());
-        handleWebSocketMessage(ws, message);
+        handleWebSocketMessage(ws, message, clientIp);
       } catch (error) {
-        console.error('Invalid WebSocket message:', error);
+        logger.error('Invalid WebSocket message', { error, rawData: data.toString(), clientIp });
       }
     }); 
 
     ws.on('close', () => {
-      console.log('WebSocket connection closed');
+      logger.info('WebSocket connection closed', { clientIp });
       Array.from(documentSessions.entries()).forEach(([documentId]) => {
         leaveDocument(ws, documentId);
       });
     });
 
     ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+      logger.error('WebSocket error', { error, clientIp });
     });
   });
 
-  function handleWebSocketMessage(ws: WebSocket, message: any) {
+  function handleWebSocketMessage(ws: WebSocket, message: any, clientIp?: string) {
     switch (message.type) {
       case 'join-document':
         joinDocument(ws, message.documentId, message.userId);
@@ -513,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         broadcastTextChange(message.documentId, message.userId, message.change);
         break;
       default:
-        console.log('Unknown message type:', message.type);
+        logger.warn('Unknown WebSocket message type received', { messageType: message.type, clientIp });
     }
   }
 
@@ -576,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             session.ws.send(JSON.stringify(message));
           } catch (error) {
-            console.error('Failed to send WebSocket message:', error);
+            logger.error('Failed to send WebSocket message', { error, documentId, messageType: message.type });
           }
         }
       });
