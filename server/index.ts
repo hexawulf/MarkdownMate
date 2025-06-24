@@ -4,6 +4,7 @@ import cors from 'cors';
 import { registerRoutes } from "./routes";
 import authRoutes from './routes/auth.js';
 import { setupVite, serveStatic, log } from "./vite";
+import logger from './src/logger'; // Import the Winston logger
 
 const app = express();
 
@@ -64,7 +65,7 @@ app.use((req, res, next) => {
 // Debug middleware for API routes
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/user')) {
-    console.log(`🔍 API Route Hit: ${req.method} ${req.path}`);
+    logger.debug(`API Route Hit: ${req.method} ${req.path}`, { path: req.path, method: req.method, ip: req.ip });
   }
   next();
 });
@@ -74,7 +75,7 @@ app.use('/api/auth', authRoutes);
 
 // ====== REDIRECT FOR OLD /api/login ENDPOINT ======
 app.use('/api/login', (req, res) => {
-  console.log(`🔀 Redirecting /api/login ${req.method} to /api/auth/login`);
+  logger.info(`Redirecting /api/login ${req.method} to /api/auth/login`, { path: req.path, method: req.method, ip: req.ip });
   if (req.method === 'GET') {
     res.redirect(301, '/api/auth/login');
   } else {
@@ -91,7 +92,7 @@ app.use('/api/login', (req, res) => {
 
   // Test route for debugging
   app.get('/api/direct-test', (req, res) => {
-    console.log('🎯 Direct test route hit!');
+    logger.info('Direct test route hit!', { path: req.path, method: req.method, ip: req.ip });
     res.json({ message: "Direct route works!", timestamp: new Date() });
   });
 
@@ -100,10 +101,13 @@ app.use('/api/login', (req, res) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     
-    console.error(`❌ Server Error ${status}:`, message);
-    console.error(`❌ Error stack:`, err.stack);
+    logger.error(`Server Error ${status}: ${message}`, err);
     res.status(status).json({ message });
-    throw err;
+    // It's generally not recommended to re-throw the error here in Express
+    // as it might terminate the process if not caught by a higher-level handler.
+    // Consider if this `throw err;` is essential for your application flow.
+    // For now, I will comment it out to prevent potential unhandled promise rejections.
+    // throw err;
   });
 
   // IMPORTANT: Setup static/vite AFTER API routes
@@ -112,7 +116,7 @@ app.use('/api/login', (req, res) => {
     await setupVite(app, server);
   } else {
     // In production, serve static files
-    console.log('🚀 Running in PRODUCTION mode - serving static files');
+    logger.info('Running in PRODUCTION mode - serving static files');
     serveStatic(app);
   }
 
@@ -121,33 +125,37 @@ app.use('/api/login', (req, res) => {
 
   // Graceful shutdown handlers
   process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully');
+    logger.info('SIGTERM received, shutting down gracefully');
     server.close(() => {
+      logger.info('Server closed.');
       process.exit(0);
     });
   });
 
   process.on('SIGINT', () => {
-    console.log('SIGINT received, shutting down gracefully');
+    logger.info('SIGINT received, shutting down gracefully');
     server.close(() => {
+      logger.info('Server closed.');
       process.exit(0);
     });
   });
 
   server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`Port ${port} is already in use. Attempting to retry...`);
+      logger.error(`Port ${port} is already in use. Attempting to retry...`, err);
       setTimeout(() => {
         server.close();
         server.listen({
           port,
           host: "0.0.0.0",
         }, () => {
-          log(`serving on port ${port}`);
+          // The 'log' function from vite.ts might still be useful for vite specific logs
+          // For general server logs, use the winston logger.
+          logger.info(`Server re-attempting to listen on port ${port}`);
         });
       }, 1000);
     } else {
-      console.error('Server error:', err);
+      logger.error('Server error:', err);
       process.exit(1);
     }
   });
@@ -156,8 +164,10 @@ app.use('/api/login', (req, res) => {
     port,
     host: "0.0.0.0",
   }, () => {
+    // The 'log' function from vite.ts seems specific to vite's output, let's keep it for that.
     log(`serving on port ${port}`);
-    console.log(`🌍 Environment: ${app.get("env") || 'development'}`);
-    console.log(`📂 Serving: ${app.get("env") === "development" ? 'Vite dev server' : 'Static files from /dist'}`);
+    logger.info(`Server started on port ${port}`);
+    logger.info(`Environment: ${app.get("env") || 'development'}`);
+    logger.info(`Serving: ${app.get("env") === "development" ? 'Vite dev server' : 'Static files from /dist'}`);
   });
 })();
