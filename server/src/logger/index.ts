@@ -5,7 +5,12 @@ const { combine, timestamp, json, errors, colorize, printf } = winston.format;
 
 // Ensure the logs directory exists (though typically this should be handled outside the logger)
 // For this exercise, we'll assume it's handled by the setup script or deployment process.
-const logsDir = path.join(process.cwd(), 'logs'); // Adjusted to be relative to project root, assuming server is run from project root
+// const logsDir = path.join(process.cwd(), 'logs'); // Old path resolution
+
+// New path resolution using __dirname to be robust to CWD changes
+// __dirname in this file (server/src/logger/index.ts) points to server/src/logger
+// So, ../../logs points to project_root/logs
+const logsDir = path.resolve(__dirname, '../../logs');
 
 const logger = winston.createLogger({
   level: 'info',

@@ -169,5 +169,6 @@ app.use('/api/login', (req, res) => {
     logger.info(`Server started on port ${port}`);
     logger.info(`Environment: ${app.get("env") || 'development'}`);
     logger.info(`Serving: ${app.get("env") === "development" ? 'Vite dev server' : 'Static files from /dist'}`);
+    logger.info('Winston logger initialized – startup check'); // Added test log message
   });
 })();
