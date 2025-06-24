@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { getAuth } from 'firebase-admin/auth';
+import logger from '../src/logger'; // Import the Winston logger
 
 const router = Router();
 
 // Register endpoint
 router.post('/register', async (req, res) => {
-  console.log('[Auth] Register endpoint accessed');
+  logger.info('[Auth] Register endpoint accessed', { path: req.path, method: req.method, ip: req.ip });
   const { email, password, displayName } = req.body;
 
   if (!email || !password) {
@@ -22,7 +23,7 @@ router.post('/register', async (req, res) => {
       displayName: displayName || email.split('@')[0]
     });
 
-    console.log('[Auth] User created successfully:', userRecord.uid);
+    logger.info(`[Auth] User created successfully: ${userRecord.uid}`, { userId: userRecord.uid });
     
     res.status(201).json({
       message: 'User registered successfully',
@@ -34,7 +35,7 @@ router.post('/register', async (req, res) => {
     });
 
   } catch (error: any) {
-    console.error('[Auth] Registration error:', error.message);
+    logger.error(`[Auth] Registration error: ${error.message}`, { error, path: req.path, method: req.method, ip: req.ip });
     
     // Handle common Firebase errors
     if (error.code === 'auth/email-already-exists') {
@@ -56,7 +57,7 @@ router.post('/register', async (req, res) => {
 
 // Login endpoint
 router.post('/login', async (req, res) => {
-  console.log('[Auth] Login endpoint accessed');
+  logger.info('[Auth] Login endpoint accessed', { path: req.path, method: req.method, ip: req.ip });
   const { idToken } = req.body;
 
   if (!idToken) {
@@ -69,7 +70,7 @@ router.post('/login', async (req, res) => {
     // Verify the ID token
     const decodedToken = await getAuth().verifyIdToken(idToken);
     
-    console.log('[Auth] Token verified for user:', decodedToken.uid);
+    logger.info(`[Auth] Token verified for user: ${decodedToken.uid}`, { userId: decodedToken.uid });
     
     // Set cookie or return token
     res.cookie('token', idToken, {
@@ -89,10 +90,10 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error: any) {
-    console.error('[Auth] Login error:', error.message);
+    logger.error(`[Auth] Login error: ${error.message}`, { error, path: req.path, method: req.method, ip: req.ip });
     res.status(401).json({ 
       message: 'Invalid token',
-      error: error.message 
+      error: error.message // Keep original error message for client if needed, but logged with full details
     });
   }
 });
@@ -110,7 +111,7 @@ router.get('/login', (req, res) => {
 
 // Logout endpoint
 router.post('/logout', (req, res) => {
-  console.log('[Auth] Logout endpoint accessed');
+  logger.info('[Auth] Logout endpoint accessed', { path: req.path, method: req.method, ip: req.ip });
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 });
