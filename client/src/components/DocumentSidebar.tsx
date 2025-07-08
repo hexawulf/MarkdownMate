@@ -434,19 +434,19 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
     setSearchQuery(''); // Clear search query
     // searchResults will automatically update via its useQuery hook when searchQuery changes.
     // No direct setSearchResults([]) is needed if searchResults is managed by useQuery.
-    console.log('🔍 All Documents clicked - showing all documents. State after reset:', { selectedFolder: null, searchQuery: '', viewMode: 'all' });
+    // console.log('🔍 All Documents clicked - showing all documents. State after reset:', { selectedFolder: null, searchQuery: '', viewMode: 'all' });
   };
 
   const displayedDocuments = useMemo(() => {
     // SEARCH MODE: Show search results
     if (searchQuery && searchResults.length >= 0) { // Ensure searchResults is defined, even if empty
-      console.log('🔍 Filtering logic: Search mode active');
+      // console.log('🔍 Filtering logic: Search mode active');
       return searchResults;
     }
 
     // FOLDER MODE: Show documents in specific folder
     if (viewMode === 'folder' && selectedFolder) {
-      console.log(`🔍 Filtering logic: Folder mode active for folder "${selectedFolder.name}" (ID: ${selectedFolder.id})`);
+      // console.log(`🔍 Filtering logic: Folder mode active for folder "${selectedFolder.name}" (ID: ${selectedFolder.id})`);
       return documents.filter(doc => doc.folderId === selectedFolder.id);
     }
 
@@ -454,7 +454,7 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
     // This condition is met when searchQuery is empty, and either viewMode is 'all'
     // or selectedFolder is null (which handleAllDocumentsClick ensures).
     if (viewMode === 'all' && !selectedFolder) {
-      console.log('🔍 Filtering logic: All Documents mode active, showing all documents:', documents.length);
+      // console.log('🔍 Filtering logic: All Documents mode active, showing all documents:', documents.length);
       return documents;
     }
 
@@ -463,21 +463,21 @@ export default function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProp
     // AND selectedFolder is also null. Or, viewMode is 'folder' but selectedFolder is null.
     // This might happen during initial load or if state is inconsistent.
     // For safety, returning all documents, but it's worth reviewing if this occurs.
-    console.log('🔍 Filtering logic: Fallback - returning all documents. Review if this state is expected.', { viewMode, selectedFolder, searchQuery });
+    // console.log('🔍 Filtering logic: Fallback - returning all documents. Review if this state is expected.', { viewMode, selectedFolder, searchQuery });
     return documents; // Default to all documents if no other condition met.
   }, [documents, searchResults, searchQuery, selectedFolder, viewMode]);
 
   useEffect(() => {
-    console.log('🔍 DocumentSidebar State Update:', {
-      totalDocuments: documents.length,
-      displayedDocumentsCount: displayedDocuments.length,
-      selectedFolder: selectedFolder ? { id: selectedFolder.id, name: selectedFolder.name } : null,
-      searchQuery,
-      viewMode, // Added viewMode for better context
-      // Optionally, list some document titles for quick check, but be mindful of log size
-      // documentsSample: documents.slice(0, 3).map(d => ({ id: d.id, title: d.title, folderId: d.folderId })),
-      // displayedDocumentsSample: displayedDocuments.slice(0, 3).map(d => ({ id: d.id, title: d.title, folderId: d.folderId }))
-    });
+    // console.log('🔍 DocumentSidebar State Update:', {
+    //   totalDocuments: documents.length,
+    //   displayedDocumentsCount: displayedDocuments.length,
+    //   selectedFolder: selectedFolder ? { id: selectedFolder.id, name: selectedFolder.name } : null,
+    //   searchQuery,
+    //   viewMode, // Added viewMode for better context
+    //   // Optionally, list some document titles for quick check, but be mindful of log size
+    //   // documentsSample: documents.slice(0, 3).map(d => ({ id: d.id, title: d.title, folderId: d.folderId })),
+    //   // displayedDocumentsSample: displayedDocuments.slice(0, 3).map(d => ({ id: d.id, title: d.title, folderId: d.folderId }))
+    // });
   }, [documents, displayedDocuments, selectedFolder, searchQuery, viewMode]); // Added viewMode to dependency array
 
   if (!isOpen) return null;

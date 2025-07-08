@@ -35,7 +35,7 @@ class ImportExportService {
   // --- Import Methods ---
 
   async importFromFile(file: File): Promise<ImportSource> {
-    console.log(`Importing from file: ${file.name}`);
+    // console.log(`Importing from file: ${file.name}`);
     const extension = file.name.split('.').pop()?.toLowerCase();
     let content: string = '';
     const metadata: DocumentMetadata | undefined = undefined; // Placeholder for metadata extraction
@@ -61,7 +61,7 @@ class ImportExportService {
         default:
           throw new Error(`Unsupported file type: ${extension}`);
       }
-      console.log(`File ${file.name} imported successfully.`);
+      // console.log(`File ${file.name} imported successfully.`);
       return {
         type: 'file',
         content,
@@ -75,7 +75,7 @@ class ImportExportService {
   }
 
   async importFromUrl(url: string): Promise<ImportSource> {
-    console.log(`Importing from URL: ${url}`);
+    // console.log(`Importing from URL: ${url}`);
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -89,7 +89,7 @@ class ImportExportService {
         content = turndownService.turndown(rawContent);
       }
       const filename = url.substring(url.lastIndexOf('/') + 1) || 'imported_from_url';
-      console.log(`URL ${url} imported successfully.`);
+      // console.log(`URL ${url} imported successfully.`);
       return {
         type: 'url',
         content,
@@ -102,7 +102,7 @@ class ImportExportService {
   }
 
   async importFromGithub(githubUrl: string): Promise<ImportSource> {
-    console.log(`Importing from GitHub URL: ${githubUrl}`);
+    // console.log(`Importing from GitHub URL: ${githubUrl}`);
     const octokit = await this._getOctokit();
     try {
       const url = new URL(githubUrl);
@@ -113,7 +113,7 @@ class ImportExportService {
         gistId = pathParts[1];
         if (!gistId) throw new Error('Invalid Gist URL: Missing Gist ID.');
 
-        console.log(`Fetching Gist ID: ${gistId}`);
+        // console.log(`Fetching Gist ID: ${gistId}`);
         const gist = await octokit.gists.get({ gist_id: gistId });
 
         if (!gist.data.files || Object.keys(gist.data.files).length === 0) {
@@ -133,7 +133,7 @@ class ImportExportService {
         path = pathParts.slice(url.hostname === 'raw.githubusercontent.com' ? 3 : (pathParts.indexOf('raw') + 1)).join('/');
         if (!owner || !repo || !path) throw new Error('Invalid GitHub raw URL: Missing owner, repo, or path.');
 
-        console.log(`Fetching raw content from GitHub: ${owner}/${repo}/${path}`);
+        // console.log(`Fetching raw content from GitHub: ${owner}/${repo}/${path}`);
         const response = await octokit.repos.getContent({ owner, repo, path });
         if ('content' in response.data && typeof response.data.content === 'string') {
           contentResponse = Buffer.from(response.data.content, 'base64').toString('utf-8');
@@ -148,7 +148,7 @@ class ImportExportService {
         path = pathParts.slice(pathParts.indexOf('blob') + 2).join('/');
         if (!owner || !repo || !path) throw new Error('Invalid GitHub blob URL.');
 
-        console.log(`Fetching content using inferred raw path from GitHub blob URL: ${owner}/${repo}/${path}`);
+        // console.log(`Fetching content using inferred raw path from GitHub blob URL: ${owner}/${repo}/${path}`);
         const response = await octokit.repos.getContent({ owner, repo, path });
         if ('content' in response.data && typeof response.data.content === 'string') {
           contentResponse = Buffer.from(response.data.content, 'base64').toString('utf-8');
@@ -166,7 +166,7 @@ class ImportExportService {
         finalContent = turndownService.turndown(contentResponse);
       }
 
-      console.log(`GitHub content for "${filename}" imported successfully.`);
+      // console.log(`GitHub content for "${filename}" imported successfully.`);
       return {
         type: 'github',
         content: finalContent,
@@ -184,13 +184,13 @@ class ImportExportService {
   }
 
   async importFromClipboard(): Promise<ImportSource> {
-    console.log('Importing from clipboard');
+    // console.log('Importing from clipboard');
     try {
       if (!navigator.clipboard || !navigator.clipboard.readText) {
         throw new Error('Clipboard API not available in this browser or context (requires HTTPS).');
       }
       const content = await navigator.clipboard.readText();
-      console.log('Content imported from clipboard successfully.');
+      // console.log('Content imported from clipboard successfully.');
       return {
         type: 'clipboard',
         content,
@@ -205,25 +205,25 @@ class ImportExportService {
   // --- Export Methods ---
 
   async exportToMd(content: string, options: ExportOptions): Promise<void> {
-    console.log(`Exporting to Markdown: ${options.filename}, Destination: ${options.destination}`);
+    // console.log(`Exporting to Markdown: ${options.filename}, Destination: ${options.destination}`);
     try {
       switch (options.destination) {
         case 'download':
           const { saveAs } = await import('file-saver');
           const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
           saveAs(blob, options.filename);
-          console.log('Markdown export successful (download).');
+          // console.log('Markdown export successful (download).');
           break;
         case 'clipboard':
           if (!navigator.clipboard || !navigator.clipboard.writeText) {
             throw new Error('Clipboard API not available.');
           }
           await navigator.clipboard.writeText(content);
-          console.log('Markdown content copied to clipboard.');
+          // console.log('Markdown content copied to clipboard.');
           break;
         case 'gist':
           await this.exportToGist(content, options.filename, options.includeMetadata ? "Markdown content with metadata" : "Markdown content");
-          console.log('Markdown export successful (Gist).');
+          // console.log('Markdown export successful (Gist).');
           break;
         default:
           console.warn(`Markdown export to ${options.destination} not yet implemented.`);
@@ -236,25 +236,25 @@ class ImportExportService {
   }
 
   async exportToTxt(content: string, options: ExportOptions): Promise<void> {
-    console.log(`Exporting to Text: ${options.filename}, Destination: ${options.destination}`);
+    // console.log(`Exporting to Text: ${options.filename}, Destination: ${options.destination}`);
     try {
       switch (options.destination) {
         case 'download':
           const { saveAs } = await import('file-saver');
           const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
           saveAs(blob, options.filename);
-          console.log('Text export successful (download).');
+          // console.log('Text export successful (download).');
           break;
         case 'clipboard':
           if (!navigator.clipboard || !navigator.clipboard.writeText) {
             throw new Error('Clipboard API not available.');
           }
           await navigator.clipboard.writeText(content);
-          console.log('Text content copied to clipboard.');
+          // console.log('Text content copied to clipboard.');
           break;
          case 'gist':
           await this.exportToGist(content, options.filename, "Plain text content");
-          console.log('Text export successful (Gist).');
+          // console.log('Text export successful (Gist).');
           break;
         default:
           console.warn(`Text export to ${options.destination} not yet implemented.`);
@@ -267,7 +267,7 @@ class ImportExportService {
   }
 
   async exportToPdf(htmlContent: string, options: ExportOptions): Promise<void> {
-    console.log(`Exporting to PDF: ${options.filename}, Destination: ${options.destination}`);
+    // console.log(`Exporting to PDF: ${options.filename}, Destination: ${options.destination}`);
     if (options.destination !== 'download') {
         console.warn(`PDF export currently only supports 'download' destination.`);
         throw new Error(`PDF export to ${options.destination} is not directly supported. Only download is available.`);
@@ -281,14 +281,14 @@ class ImportExportService {
       const pdfContainer = document.createElement('div');
       pdfContainer.style.position = 'absolute';
       pdfContainer.style.left = '-9999px';
-      pdfContainer.style.width = '800px';
-      pdfContainer.innerHTML = `<div style="padding: 20px;">${htmlContent}</div>`;
+      pdfContainer.style.width = '800px'; // Define a width for layout
+      pdfContainer.innerHTML = `<div style="padding: 20px;">${htmlContent}</div>`; // Add padding for content
       document.body.appendChild(pdfContainer);
 
       const canvas = await html2canvas(pdfContainer, {
-        scale: 2,
-        useCORS: true,
-        logging: true,
+        scale: 2, // Increase for better quality
+        useCORS: true, // If external images are present
+        logging: true, // Set to true for debugging html2canvas
       });
 
       document.body.removeChild(pdfContainer);
@@ -310,27 +310,29 @@ class ImportExportService {
       pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
       heightLeft -= pdfHeight;
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
+      while (heightLeft >= 0) { // Ensure all content is added
+        position = heightLeft - imgHeight; // This logic might need adjustment
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
 
       saveAs(pdf.output('blob'), options.filename);
-      console.log('PDF export successful (download).');
+      // console.log('PDF export successful (download).');
 
     } catch (error) {
       console.error('Error exporting to PDF:', error);
       // Attempt to remove container if it still exists on error
       const tempContainer = document.querySelector('#pdf-container-temp'); // Assuming an ID if you add one
-      if (tempContainer) document.body.removeChild(tempContainer);
+      if (tempContainer && tempContainer.parentNode) { // Check parentNode before removing
+         tempContainer.parentNode.removeChild(tempContainer);
+      }
       throw error;
     }
   }
 
   async exportToJson(data: {content: string, metadata?: DocumentMetadata}, options: ExportOptions): Promise<void> {
-    console.log(`Exporting to JSON: ${options.filename}, Destination: ${options.destination}`);
+    // console.log(`Exporting to JSON: ${options.filename}, Destination: ${options.destination}`);
     try {
       const jsonString = JSON.stringify(data, null, 2);
       switch (options.destination) {
@@ -338,18 +340,18 @@ class ImportExportService {
           const { saveAs } = await import('file-saver');
           const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
           saveAs(blob, options.filename);
-          console.log('JSON export successful (download).');
+          // console.log('JSON export successful (download).');
           break;
         case 'clipboard':
            if (!navigator.clipboard || !navigator.clipboard.writeText) {
             throw new Error('Clipboard API not available.');
           }
           await navigator.clipboard.writeText(jsonString);
-          console.log('JSON content copied to clipboard.');
+          // console.log('JSON content copied to clipboard.');
           break;
         case 'gist':
           await this.exportToGist(jsonString, options.filename, "JSON data", options.includeMetadata ? data.metadata?.description : undefined);
-          console.log('JSON export successful (Gist).');
+          // console.log('JSON export successful (Gist).');
           break;
         default:
           console.warn(`JSON export to ${options.destination} not yet implemented.`);
@@ -362,7 +364,7 @@ class ImportExportService {
   }
 
   private async exportToGist(content: string, filename: string, description: string, gistDescription?: string): Promise<string> {
-    console.log(`Creating Gist: ${filename}`);
+    // console.log(`Creating Gist: ${filename}`);
     const octokit = await this._getOctokit();
     try {
       const response = await octokit.gists.create({
@@ -371,11 +373,11 @@ class ImportExportService {
             content: content,
           },
         },
-        public: true,
+        public: true, // Changed to true for simplicity, consider making this an option
         description: gistDescription || description,
       });
       if (response.data.html_url) {
-        console.log(`Gist created successfully: ${response.data.html_url}`);
+        // console.log(`Gist created successfully: ${response.data.html_url}`);
         return response.data.html_url;
       } else {
         throw new Error('Failed to create Gist: No URL returned.');

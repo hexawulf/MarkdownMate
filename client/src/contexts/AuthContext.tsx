@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const data = await response.json();
-      console.log('User registered successfully:', data);
+      // console.log('User registered successfully:', data);
       return data;
     } catch (error) {
       console.error("Error registering user:", error);
