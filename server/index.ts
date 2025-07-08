@@ -121,7 +121,7 @@ app.use('/api/login', (req, res) => {
   }
 
   // MarkdownMate runs on port 5004
-  const port = 5004;
+  const port = process.env.PORT || 5004;
 
   // Graceful shutdown handlers
   process.on('SIGTERM', () => {

@@ -16,7 +16,7 @@ export default function Landing() {
     // A try-catch block is included to log any potential errors during redirection.
     if (!loading && currentUser) {
       try {
-        console.log("Redirecting to external editor as user is logged in.");
+        // console.log("Redirecting to external editor as user is logged in.");
         window.location.href = "https://markdown.piapps.dev/editor";
       } catch (error) {
         console.error("Failed to redirect to external editor:", error);

@@ -39,7 +39,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
       // This is a newly loaded document - sync it regardless of content
       lastSavedContent.current = content;
       hasInitializedRef.current = documentId;
-      console.log('[MonacoEditor Sync] Initial document sync - lastSavedContent set to length:', content.length);
+      // console.log('[MonacoEditor Sync] Initial document sync - lastSavedContent set to length:', content.length);
     }
   }, [documentId, content]);
 
@@ -53,7 +53,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
 
       // console.log('[Debounce Check] isCreatingNewDocument:', isCurrentlyCreating);
       if (isCurrentlyCreating) {
-        console.log("Auto-save skipped: new document not yet created");
+        // console.log("Auto-save skipped: new document not yet created");
         return;
       }
 
@@ -71,7 +71,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
         return;
       }
 
-      console.log('Autosave triggered for document:', currentDocumentId);
+      // console.log('Autosave triggered for document:', currentDocumentId);
       useEditorStore.getState().setAutoSaveStatus('Saving...');
 
       fetch(`/api/documents/${currentDocumentId}`, {
@@ -81,7 +81,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
       })
       .then(response => {
         if (response.ok) {
-          console.log('Autosave successful. Status:', response.status);
+          // console.log('Autosave successful. Status:', response.status);
           useEditorStore.getState().setAutoSaveStatus('Auto-saved');
           lastSavedContent.current = currentContentValue; // Update lastSavedContent on successful save
           return response.json();
@@ -101,7 +101,7 @@ export default function MonacoEditor({ documentId }: MonacoEditorProps) {
       })
       .then(data => {
         if (data) {
-          console.log('Autosave response data:', data);
+          // console.log('Autosave response data:', data);
           // Potentially update other state based on response if needed
         }
       })
