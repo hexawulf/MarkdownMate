@@ -2,20 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { URL } from "url";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
   plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-        ]
-      : []),
+    react()
   ],
   resolve: {
     alias: {
@@ -26,17 +16,17 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
-      'mammoth',
-      'turndown', 
-      'file-saver',
-      'jspdf',
-      'html2canvas',
-      '@octokit/rest',
-      'react',
-      'react-dom',
-      'wouter',
-      'use-sync-external-store',
-      'use-sync-external-store/shim'
+      "mammoth",
+      "turndown",
+      "file-saver",
+      "jspdf",
+      "html2canvas",
+      "@octokit/rest",
+      "react",
+      "react-dom",
+      "wouter",
+      "use-sync-external-store",
+      "use-sync-external-store/shim"
     ],
     force: true,
   },
@@ -45,15 +35,15 @@ export default defineConfig({
     outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "dist"),
     emptyOutDir: true,
     sourcemap: true,
-    minify: false, // Disabled for debugging - enable after fixing
-    target: 'es2020',
+    minify: false, // Re-enable in production if needed
+    target: "es2020",
     commonjsOptions: {
       include: [
-        /mammoth/, 
-        /turndown/, 
-        /file-saver/, 
-        /jspdf/, 
-        /html2canvas/, 
+        /mammoth/,
+        /turndown/,
+        /file-saver/,
+        /jspdf/,
+        /html2canvas/,
         /@octokit/,
         /node_modules/
       ],
@@ -61,36 +51,26 @@ export default defineConfig({
     },
     rollupOptions: {
       onwarn(warning, warn) {
-        // Ignore specific warnings that are causing issues
-        if (warning.code === 'UNRESOLVED_IMPORT') {
-          return;
-        }
-        if (warning.code === 'MISSING_EXPORT' && warning.exporter?.includes('react')) {
-          return;
-        }
+        if (warning.code === "UNRESOLVED_IMPORT") return;
+        if (warning.code === "MISSING_EXPORT" && warning.exporter?.includes("react")) return;
         warn(warning);
       },
       output: {
-        // Disable manual chunking temporarily to avoid bundling issues
         manualChunks: undefined,
-        // Use more conservative output options
-        format: 'es',
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      }
+        format: "es",
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
+      },
     },
   },
   server: {
-    // Added explicit configuration for development server
-    port: 5004, // Ensure Vite knows about the port
-    host: "0.0.0.0", // Allow external access
+    port: 5004,
+    host: "0.0.0.0",
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
-    // Since you're using single-server setup, no proxy needed
-    // But we'll be explicit about handling middleware mode
-    middlewareMode: false, // Let Express handle this
+    middlewareMode: false,
   },
 });
