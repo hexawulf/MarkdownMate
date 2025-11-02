@@ -1,7 +1,15 @@
-import { Editor } from '@monaco-editor/react';
+import { Editor, loader } from '@monaco-editor/react';
 import { useTheme } from 'next-themes';
 import { useEffect, useRef } from 'react';
 import type { editor } from 'monaco-editor';
+import * as monaco from 'monaco-editor';
+
+// Import worker configuration (must be before Monaco initialization)
+import '../../monaco-workers';
+
+// Configure loader to use bundled Monaco instead of CDN
+// Setting paths to false disables AMD loader completely
+loader.config({ monaco, paths: { vs: '' } });
 
 interface EditorPaneProps {
   value: string;
