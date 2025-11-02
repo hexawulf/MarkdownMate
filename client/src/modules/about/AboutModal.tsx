@@ -52,7 +52,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
                 variant="outline"
                 size="sm"
                 className="justify-start"
-                onClick={() => openLink('https://github.com/yourusername/MarkdownMate#readme')}
+                onClick={() => openLink('https://github.com/hexawulf/MarkdownMate#readme')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 README
@@ -61,7 +61,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
                 variant="outline"
                 size="sm"
                 className="justify-start"
-                onClick={() => openLink('https://github.com/yourusername/MarkdownMate/blob/main/CHANGELOG.md')}
+                onClick={() => openLink('https://github.com/hexawulf/MarkdownMate/blob/main/CHANGELOG.md')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Changelog
@@ -70,7 +70,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
                 variant="outline"
                 size="sm"
                 className="justify-start"
-                onClick={() => openLink('https://github.com/yourusername/MarkdownMate#keyboard-shortcuts')}
+                onClick={() => openLink('https://github.com/hexawulf/MarkdownMate#keyboard-shortcuts')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Keyboard Shortcuts
@@ -79,7 +79,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
                 variant="outline"
                 size="sm"
                 className="justify-start"
-                onClick={() => openLink('https://github.com/yourusername/MarkdownMate/security')}
+                onClick={() => openLink('https://github.com/hexawulf/MarkdownMate/security')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Security
@@ -140,7 +140,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
               variant="link"
               size="sm"
               className="text-xs"
-              onClick={() => openLink('https://github.com/yourusername/MarkdownMate')}
+              onClick={() => openLink('https://github.com/hexawulf/MarkdownMate')}
             >
               View on GitHub
             </Button>
