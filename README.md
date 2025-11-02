@@ -43,6 +43,7 @@ MarkdownMate is a single-user, local-first markdown editor designed for speed an
 *   **🔒 Private**: All data stays on your device
 *   **⌨️ Keyboard Shortcuts**: Full keyboard navigation for power users
 *   **📊 Status Bar**: Word/character count, cursor position, last saved time
+*   **ℹ️ About Modal**: Access app info, version, GitHub links, and keyboard shortcuts guide
 
 ---
 
@@ -54,7 +55,7 @@ MarkdownMate is a single-user, local-first markdown editor designed for speed an
 - Vite 7
 - Tailwind CSS 3
 - shadcn/ui components
-- Monaco Editor
+- Monaco Editor (ESM bundle with local workers)
 - IndexedDB (via idb)
 
 **Markdown Processing:**
@@ -225,7 +226,7 @@ sudo certbot --nginx -d markdown.piapps.dev
 |----------|--------|
 | `Ctrl/Cmd + S` | Save document manually |
 | `Ctrl/Cmd + E` | Open export dialog |
-| `Ctrl/Cmd + /` | Show keyboard shortcuts help |
+| `Ctrl/Cmd + /` | Show About modal with keyboard shortcuts |
 | `Ctrl/Cmd + B` | Bold formatting (planned) |
 | `Ctrl/Cmd + I` | Italic formatting (planned) |
 | `Ctrl/Cmd + K` | Inline code (planned) |
@@ -265,10 +266,11 @@ Use your browser's print dialog (Ctrl/Cmd + P) to export as PDF. The included pr
 
 ### Security Measures
 - **HTML Sanitization**: All rendered HTML is sanitized with `rehype-sanitize`
-- **CSP Headers**: Content Security Policy prevents XSS attacks
+- **Strict CSP Headers**: Content Security Policy prevents XSS attacks
 - **helmet.js**: Security headers configured on server
-- **No eval()**: No dynamic code execution
+- **No eval()**: No dynamic code execution, Monaco bundled locally with ESM
 - **Data URLs for images**: Paste/drop images are embedded as data URLs (no external requests)
+- **No CDN Dependencies**: All code and workers bundled locally for maximum security
 
 ---
 
