@@ -21,9 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Download, Settings, Moon, Sun, HelpCircle } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { Download, Settings, Moon, Sun, HelpCircle, Info } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
+import { AboutModal } from '@/modules/about';
 
 export default function Editor() {
   const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument } = useDocumentsStore();
@@ -33,11 +34,12 @@ export default function Editor() {
   const [lastSaved, setLastSaved] = useState<number | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
+  const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
   
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   // Load documents on mount
   useEffect(() => {
@@ -142,7 +144,17 @@ export default function Editor() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setAboutDialogOpen(true)}
+            aria-label="About"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
@@ -250,6 +262,9 @@ export default function Editor() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* About modal */}
+      <AboutModal open={aboutDialogOpen} onClose={() => setAboutDialogOpen(false)} />
     </div>
   );
 }

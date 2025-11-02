@@ -1,5 +1,5 @@
 import { Editor, loader } from '@monaco-editor/react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/hooks/useTheme';
 import { useEffect, useRef } from 'react';
 import type { editor } from 'monaco-editor';
 import * as monaco from 'monaco-editor';
