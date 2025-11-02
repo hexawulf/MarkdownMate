@@ -1,213 +1,327 @@
 # MarkdownMate
 
+**A fast, local-first markdown editor with live preview, autosave, and GitHub-flavored markdown support.**
+
 <div align="center">
-  <h3 align="center">Beautiful Markdown, Together</h3>
   <img src="https://img.shields.io/badge/React-18-blue?logo=react" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Vite-5-purple?logo=vite" alt="Vite" />
+  <img src="https://img.shields.io/badge/Vite-7-purple?logo=vite" alt="Vite" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-blue?logo=tailwindcss" alt="Tailwind CSS" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" /></a>
 </div>
-
-<br>
-
-<p align="center">
-  <img src="docs/screenshots/landing-page.png" alt="MarkdownMate Landing Page" width="800" />
-  <br>
-  <em>MarkdownMate: Modern, collaborative markdown editing.</em>
-</p>
 
 ---
 
 ## 📚 Table of Contents
 
-*   [✨ Features](#features)
-*   [🛠️ Tech Stack](#tech-stack)
-*   [🚀 Quick Start Guide](#quick-start-guide)
-*   [☁️ Deployment](#deployment)
-*   [🤝 Contributing](#contributing)
-*   [📄 License](#license)
-*   [📞 Support](#support)
+*   [Features](#features)
+*   [Tech Stack](#tech-stack)
+*   [Quick Start](#quick-start)
+*   [Deployment](#deployment)
+*   [Keyboard Shortcuts](#keyboard-shortcuts)
+*   [Export Options](#export-options)
+*   [Privacy & Security](#privacy--security)
+*   [Contributing](#contributing)
+*   [License](#license)
 
 ---
 
 ## ✨ Features
 
-MarkdownMate is designed to provide a seamless and efficient markdown editing experience.
+MarkdownMate is a single-user, local-first markdown editor designed for speed and simplicity:
 
-*   **✍️ Real-time Collaborative Editing**: Work with your team simultaneously. See live cursors and presence indicators.
-*   **💻 Monaco Editor Integration**: Enjoy a VSCode-like editing experience with features like intelligent autocomplete and syntax highlighting.
-*   **📄 GitHub Flavored Markdown (GFM)**: Full support for GFM, including tables, task lists, and code syntax highlighting.
-*   **📱 Modern Responsive UI**: A clean, professional, and intuitive interface that looks great on all devices.
-*   **🔒 Secure Document Sharing**: Control who can access and edit your documents with granular permissions (future feature).
-*   **📤 Export Options**: Easily export your documents to Markdown. PDF & HTML coming soon!
-*   **⚡ WebSocket Powered**: Ensures instant synchronization of changes across all connected users.
-*   **🎨 Professional Design**: A GitHub-inspired color scheme and typography for a familiar and productive environment.
-
-<br>
-
-<p align="center">
-  <img src="docs/screenshots/editor-interface.png" alt="MarkdownMate Editor Interface" width="800" />
-  <br>
-  <em>The MarkdownMate editor: Feature-rich and user-friendly.</em>
-</p>
+*   **✍️ Live Preview**: Split view with real-time markdown rendering
+*   **💻 Monaco Editor**: VSCode-like editing experience with syntax highlighting
+*   **📄 GitHub Flavored Markdown**: Full GFM support (tables, task lists, strikethrough, code blocks)
+*   **🔢 Math Support**: KaTeX integration for beautiful mathematical formulas ($...$, $$...$$)
+*   **💾 Auto-save**: Automatic saving with 500ms debounce
+*   **🗄️ Local Storage**: All documents stored in browser IndexedDB - no server, no sign-up
+*   **📱 Responsive UI**: Clean, modern interface that works on desktop and mobile
+*   **📤 Multiple Export Formats**: Export to .md, self-contained .html, or print to PDF
+*   **🎨 Theme Support**: Light/dark mode toggle
+*   **⚡ Fast**: No backend dependencies, instant startup
+*   **🔒 Private**: All data stays on your device
+*   **⌨️ Keyboard Shortcuts**: Full keyboard navigation for power users
+*   **📊 Status Bar**: Word/character count, cursor position, last saved time
 
 ---
 
 ## 🛠️ Tech Stack
 
-MarkdownMate is built with a modern and robust technology stack, leveraging powerful tools like React for a dynamic frontend experience.
-
 **Frontend:**
-<p>
-  <img src="https://img.shields.io/badge/React-18-blue?logo=react" alt="React 18" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Vite-5-purple?logo=vite" alt="Vite" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3-blue?logo=tailwindcss" alt="Tailwind CSS" />
-  <img src="https://img.shields.io/badge/Shadcn/UI-latest-black?logo=shadcnui&logoColor=white" alt="shadcn/ui" />
-</p>
+- React 18
+- TypeScript 5
+- Vite 7
+- Tailwind CSS 3
+- shadcn/ui components
+- Monaco Editor
+- IndexedDB (via idb)
 
-<br>
+**Markdown Processing:**
+- unified
+- remark-gfm (GitHub Flavored Markdown)
+- remark-math (Math notation)
+- rehype-katex (Math rendering)
+- rehype-prism-plus (Syntax highlighting)
+- rehype-sanitize (XSS protection)
 
-**Editor & Markdown:**
-<p>
-  <img src="https://img.shields.io/badge/Monaco_Editor-latest-blue?logo=visualstudiocode" alt="Monaco Editor" />
-  <img src="https://img.shields.io/badge/Marked.js-latest-black?logo=markdown" alt="Marked.js" />
-  <img src="https://img.shields.io/badge/DOMPurify-latest-brightgreen" alt="DOMPurify" />
-</p>
-
-<br>
-
-**Real-time & Backend:**
-<p>
-  <img src="https://img.shields.io/badge/Node.js-20.x-green?logo=nodedotjs" alt="Node.js" />
-  <img src="https://img.shields.io/badge/Express-4.x-grey?logo=express" alt="Express.js" />
-  <img src="https://img.shields.io/badge/Socket.io-4.x-blue?logo=socketdotio" alt="Socket.io" />
-  <img src="https://img.shields.io/badge/Firebase-Admin-orange?logo=firebase" alt="Firebase Admin" />
-</p>
-
-<br>
-
-**Database & ORM:**
-<p>
-  <img src="https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Drizzle_ORM-latest-brightgreen?logo=drizzle" alt="Drizzle ORM" />
-</p>
-
-<br>
-
-**Build, Test & Deployment:**
-<p>
-  <img src="https://img.shields.io/badge/Vitest-latest-yellow?logo=vitest" alt="Vitest" />
-  <img src="https://img.shields.io/badge/GitHub_Actions-CI/CD-blue?logo=githubactions" alt="GitHub Actions" />
-  <img src="https://img.shields.io/badge/Vercel-Deployment-black?logo=vercel" alt="Vercel" />
-</p>
+**Server:**
+- Express (minimal static file serving)
+- helmet (security headers)
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start
 
-Get MarkdownMate up and running in a few simple steps:
+### Prerequisites
 
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/hexawulf/MarkdownMate.git
-    cd MarkdownMate
-    ```
+- Node.js 18+ and npm
 
-2.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
+### Installation
 
-3.  **Set up Environment Variables:**
-    *   Create a `.env` file by copying `.env.example` (if it exists, otherwise create `.env` from scratch).
-    *   Fill in your Firebase and database credentials in the `.env` file.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/hexawulf/MarkdownMate.git
+   cd MarkdownMate
+   ```
 
-4.  **Run Database Migrations:**
-    ```bash
-    npm run db:push # Or the relevant migration command for your setup
-    ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-5.  **Start the Development Servers:**
-    *   Backend server:
-        ```bash
-        npm run dev:server
-        ```
-    *   Frontend client (in a new terminal):
-        ```bash
-        npm run dev:client
-        ```
+3. **Run development server:**
+   ```bash
+   npm run dev
+   ```
 
-The application should now be available at `http://localhost:5173` (or the port Vite assigns).
+   The app will be available at `http://localhost:5004`
 
-For production builds, use `npm run build` and serve the `dist` folder.
+4. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+5. **Start production server:**
+   ```bash
+   npm start
+   ```
 
 ---
 
 ## ☁️ Deployment
 
-### GitHub Pages
+### Self-hosted on Raspberry Pi (piapps)
 
-The project includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) for automatic deployment to GitHub Pages:
+MarkdownMate is designed to run on a self-hosted server. Here's how to deploy it on a Raspberry Pi or similar device:
 
-1.  Ensure your repository is public for GitHub Pages free tier.
-2.  In your repository settings under "Pages":
-    *   Set the source to "GitHub Actions".
-3.  Pushing to the `main` branch will trigger the deployment.
+#### 1. Build the application
 
-*Note: GitHub Pages is best for static sites. For full backend functionality, use a platform like Vercel or Heroku.*
+```bash
+npm run build
+```
 
-### Vercel
+This creates a `dist/` folder with:
+- Static client files (HTML, CSS, JS)
+- Compiled server file (`index.js`)
 
-1.  **Sign up or Log in** to [Vercel](https://vercel.com).
-2.  **Import Your Project**:
-    *   Click "Add New..." -> "Project".
-    *   Connect your Git provider and select the `MarkdownMate` repository.
-3.  **Configure Your Project**:
-    *   Vercel usually auto-detects Vite projects.
-    *   **Build Command**: `npm run build` (or `vite build`)
-    *   **Output Directory**: `dist`
-    *   **Install Command**: `npm install`
-    *   Set up necessary **Environment Variables** in the Vercel project settings (for Firebase, database, etc.).
-4.  **Deploy**. Vercel will automatically deploy your project and provide a URL. Future pushes to the connected branch will trigger automatic redeployments.
+#### 2. Configure PM2 (process manager)
+
+The included `ecosystem.config.cjs` is set up for PM2:
+
+```javascript
+module.exports = {
+  apps: [{
+    name: 'markdownmate',
+    script: './dist/index.js',
+    instances: 1,
+    exec_mode: 'fork',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 5004
+    }
+  }]
+};
+```
+
+Start with PM2:
+```bash
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 startup
+```
+
+#### 3. Nginx Reverse Proxy
+
+Create `/etc/nginx/sites-available/markdownmate`:
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name markdown.piapps.dev;
+
+    # Redirect HTTP to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name markdown.piapps.dev;
+
+    # SSL Configuration (use certbot for Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/markdown.piapps.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/markdown.piapps.dev/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Proxy to Node.js app
+    location / {
+        proxy_pass http://127.0.0.1:5004;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Static assets caching
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        proxy_pass http://127.0.0.1:5004;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+Enable and restart:
+```bash
+sudo ln -s /etc/nginx/sites-available/markdownmate /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+#### 4. SSL Certificate (Let's Encrypt)
+
+```bash
+sudo certbot --nginx -d markdown.piapps.dev
+```
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + S` | Save document manually |
+| `Ctrl/Cmd + E` | Open export dialog |
+| `Ctrl/Cmd + /` | Show keyboard shortcuts help |
+| `Ctrl/Cmd + B` | Bold formatting (planned) |
+| `Ctrl/Cmd + I` | Italic formatting (planned) |
+| `Ctrl/Cmd + K` | Inline code (planned) |
+| `Ctrl/Cmd + Shift + P` | Command palette (planned) |
+
+---
+
+## 📤 Export Options
+
+### 1. Markdown (.md)
+Export raw markdown file with all formatting preserved.
+
+### 2. Self-contained HTML
+Export as a single HTML file with:
+- Inlined CSS styles
+- Rendered markdown
+- KaTeX math rendering
+- Syntax-highlighted code blocks
+- Ready to share or archive
+
+### 3. Print to PDF
+Use your browser's print dialog (Ctrl/Cmd + P) to export as PDF. The included print stylesheet ensures:
+- Clean layout
+- Proper page breaks
+- Link URLs displayed in footnotes
+- Optimized typography
+
+---
+
+## 🔒 Privacy & Security
+
+### Data Storage
+- **100% client-side**: All documents stored in browser IndexedDB
+- **No server uploads**: Your markdown never leaves your device
+- **No authentication**: No accounts, no tracking, no cookies
+- **Offline capable**: Works without internet connection
+
+### Security Measures
+- **HTML Sanitization**: All rendered HTML is sanitized with `rehype-sanitize`
+- **CSP Headers**: Content Security Policy prevents XSS attacks
+- **helmet.js**: Security headers configured on server
+- **No eval()**: No dynamic code execution
+- **Data URLs for images**: Paste/drop images are embedded as data URLs (no external requests)
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions to MarkdownMate!
+Contributions are welcome! Please follow these steps:
 
-1.  **Fork the repository.**
-2.  **Create a new branch** for your feature or bug fix: `git checkout -b feature/your-amazing-feature` or `bugfix/issue-tracker-fix`.
-3.  **Make your changes.** Ensure your code follows the project's style and conventions.
-4.  **Commit your changes** with clear, descriptive messages: `git commit -m 'feat: Add X feature that does Y'`.
-5.  **Push to your forked repository:** `git push origin feature/your-amazing-feature`.
-6.  **Open a Pull Request** to the `main` branch of the `hexawulf/MarkdownMate` repository.
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes and test thoroughly
+4. Commit with clear messages: `git commit -m 'feat: add X feature'`
+5. Push to your fork: `git push origin feature/your-feature-name`
+6. Open a Pull Request
 
-For more detailed guidelines, please see the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+### Development Guidelines
+
+- Run `npm run check` before committing (TypeScript validation)
+- Run `npm run build` to ensure builds succeed
+- Follow existing code patterns
+- Update README if adding features
+- No new external dependencies without discussion
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 📞 Support
+## 🗺️ Roadmap
 
-*   **Found a Bug?** Open an issue on [GitHub Issues](https://github.com/hexawulf/MarkdownMate/issues).
-*   **Have a Question or Idea?** Start a discussion on [GitHub Discussions](https://github.com/hexawulf/MarkdownMate/discussions).
-*   **Need Help?** Check the documentation or reach out via Discussions.
+Planned features:
+- [ ] Image paste/drop handler (convert to data URLs)
+- [ ] TOC panel (auto-generated from headings)
+- [ ] Find in preview (/ hotkey)
+- [ ] Document templates (blog post, meeting notes, README)
+- [ ] PWA support (offline app-shell)
+- [ ] Vim mode for editor
+- [ ] Front-matter metadata editor
+- [ ] Mermaid diagram support
+- [ ] Tags and advanced search
+- [ ] Export to Gist (optional, behind feature flag)
 
 ---
 
 <div align="center">
-  <p>Made with ❤️ for the developer community.</p>
+  <p>Made with ❤️ for markdown lovers</p>
   <p>
     <a href="https://github.com/hexawulf/MarkdownMate">⭐ Star this Repo</a> |
-    <a href="https://github.com/hexawulf/MarkdownMate/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5BBUG%5D">🐛 Report a Bug</a> |
-    <a href="https://github.com/hexawulf/MarkdownMate/issues/new?assignees=&labels=enhancement&template=feature_request.md&title=%5BFEATURE%5D">💡 Request a Feature</a>
+    <a href="https://github.com/hexawulf/MarkdownMate/issues/new">🐛 Report a Bug</a> |
+    <a href="https://github.com/hexawulf/MarkdownMate/issues/new">💡 Request a Feature</a>
   </p>
 </div>

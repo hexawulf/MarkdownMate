@@ -1,0 +1,142 @@
+/* Print stylesheet for clean PDF export */
+@media print {
+  /* Hide UI elements */
+  nav,
+  header,
+  footer,
+  .no-print,
+  button,
+  [role="button"],
+  .sidebar,
+  .toolbar {
+    display: none !important;
+  }
+
+  /* Reset page margins */
+  @page {
+    margin: 2cm;
+    size: A4;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #000;
+    background: #fff;
+  }
+
+  /* Optimize typography for print */
+  h1 {
+    font-size: 24pt;
+    page-break-after: avoid;
+    margin-top: 0;
+  }
+
+  h2 {
+    font-size: 18pt;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 14pt;
+    page-break-after: avoid;
+  }
+
+  h4, h5, h6 {
+    font-size: 12pt;
+    page-break-after: avoid;
+  }
+
+  /* Avoid page breaks inside elements */
+  p,
+  blockquote,
+  pre,
+  table,
+  figure {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure images fit on page */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* Show link URLs in print */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+    color: #666;
+  }
+
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after {
+    content: "";
+  }
+
+  /* Code blocks */
+  pre,
+  code {
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+    font-family: "Courier New", monospace;
+    font-size: 10pt;
+  }
+
+  pre {
+    padding: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    border-left: 4px solid #ccc;
+    padding-left: 1em;
+    margin: 1em 0;
+    font-style: italic;
+  }
+
+  /* Horizontal rules */
+  hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 2em 0;
+  }
+
+  /* Lists */
+  ul,
+  ol {
+    padding-left: 1.5em;
+  }
+
+  /* Ensure proper spacing */
+  * {
+    box-sizing: border-box;
+  }
+
+  .prose {
+    max-width: none !important;
+  }
+}

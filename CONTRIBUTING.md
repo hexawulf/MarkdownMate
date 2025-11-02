@@ -195,7 +195,7 @@ We follow Semantic Versioning (SemVer):
 2. Update version numbers and changelog
 3. Test release candidate
 4. Merge to `main` and tag release
-5. Deploy to GitHub Pages automatically
+5. Deploy to your self-hosted server (see DEPLOYMENT.md)
 
 ## Getting Help
 

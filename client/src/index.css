@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './print.css';
+
 :root {
   --background: 255 255 255; /* #FFFFFF - white */
   --foreground: 31 35 40; /* #1F2328 - GitHub near black */

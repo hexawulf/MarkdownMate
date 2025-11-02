@@ -1,60 +1,48 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
-import cors from 'cors';
-import { registerRoutes } from "./routes";
-import authRoutes from './routes/auth.js';
+import helmet from 'helmet';
 import { setupVite, serveStatic, log } from "./vite";
-import logger from './src/logger'; // Import the Winston logger
+import logger from './src/logger';
 
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5004',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+// Security headers with helmet - strict local-only CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],                    // no remote scripts, no eval
+      styleSrc: ["'self'", "'unsafe-inline'"],  // allow inline for Monaco/print CSS
+      imgSrc: ["'self'", "data:", "blob:"],     // allow data URLs for images
+      fontSrc: ["'self'", "data:"],             // allow data URLs for fonts
+      connectSrc: ["'self'"],                   // no external connections
+      workerSrc: ["'self'", "blob:"],           // Monaco workers
+      childSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      frameAncestors: ["'none'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false,  // Monaco compatibility
+  crossOriginResourcePolicy: { policy: "same-origin" }
 }));
 
-// ====== UPDATED CSP HEADERS FOR ALL REQUIRED RESOURCES ======
-app.use((req, res, next) => {
-  res.setHeader('Content-Security-Policy', 
-    "default-src 'self'; " +
-    "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://replit.com; " +
-    "worker-src 'self' blob:; " +
-    "img-src 'self' data: blob: https://lh3.googleusercontent.com https://googleusercontent.com; " +
-    "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://cdn.jsdelivr.net wss: ws:;"
-  );
-  next();
-});
-
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api") || path.startsWith("/user")) {
+    if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
       if (logLine.length > 80) {
         logLine = logLine.slice(0, 79) + "…";
       }
-
       log(logLine);
     }
   });
@@ -62,66 +50,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// Debug middleware for API routes
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/') || req.path.startsWith('/user')) {
-    logger.debug(`API Route Hit: ${req.method} ${req.path}`, { path: req.path, method: req.method, ip: req.ip });
-  }
-  next();
+// Health check endpoint
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    service: 'MarkdownMate'
+  });
 });
 
-// IMPORTANT: Register auth routes FIRST
-app.use('/api/auth', authRoutes);
-
-// ====== REDIRECT FOR OLD /api/login ENDPOINT ======
-app.use('/api/login', (req, res) => {
-  logger.info(`Redirecting /api/login ${req.method} to /api/auth/login`, { path: req.path, method: req.method, ip: req.ip });
-  if (req.method === 'GET') {
-    res.redirect(301, '/api/auth/login');
-  } else {
-    res.status(404).json({ 
-      message: 'Use /api/auth/login instead',
-      redirect: '/api/auth/login'
-    });
-  }
+// Error handling middleware
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  
+  logger.error(`Server Error ${status}: ${message}`, err);
+  res.status(status).json({ message });
 });
 
 (async () => {
-  // IMPORTANT: Register API routes BEFORE static/vite middleware
-  const server = await registerRoutes(app);
-
-  // Test route for debugging
-  app.get('/api/direct-test', (req, res) => {
-    logger.info('Direct test route hit!', { path: req.path, method: req.method, ip: req.ip });
-    res.json({ message: "Direct route works!", timestamp: new Date() });
-  });
-
-  // Error handling middleware
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    
-    logger.error(`Server Error ${status}: ${message}`, err);
-    res.status(status).json({ message });
-    // It's generally not recommended to re-throw the error here in Express
-    // as it might terminate the process if not caught by a higher-level handler.
-    // Consider if this `throw err;` is essential for your application flow.
-    // For now, I will comment it out to prevent potential unhandled promise rejections.
-    // throw err;
-  });
-
-  // IMPORTANT: Setup static/vite AFTER API routes
-  // This ensures API routes are registered and handled first
+  const server = app.listen(5004);
+  
+  // Setup static/vite based on environment
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // In production, serve static files
     logger.info('Running in PRODUCTION mode - serving static files');
     serveStatic(app);
   }
 
-  // MarkdownMate runs on port 5004
-  const port = process.env.PORT || 5004;
+  const port = 5004;
 
   // Graceful shutdown handlers
   process.on('SIGTERM', () => {
@@ -142,33 +100,18 @@ app.use('/api/login', (req, res) => {
 
   server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
-      logger.error(`Port ${port} is already in use. Attempting to retry...`, err);
-      setTimeout(() => {
-        server.close();
-        server.listen({
-          port,
-          host: "0.0.0.0",
-        }, () => {
-          // The 'log' function from vite.ts might still be useful for vite specific logs
-          // For general server logs, use the winston logger.
-          logger.info(`Server re-attempting to listen on port ${port}`);
-        });
-      }, 1000);
+      logger.error(`Port ${port} is already in use.`, err);
+      process.exit(1);
     } else {
       logger.error('Server error:', err);
       process.exit(1);
     }
   });
 
-  server.listen({
-    port,
-    host: "0.0.0.0",
-  }, () => {
-    // The 'log' function from vite.ts seems specific to vite's output, let's keep it for that.
+  server.on('listening', () => {
     log(`serving on port ${port}`);
     logger.info(`Server started on port ${port}`);
     logger.info(`Environment: ${app.get("env") || 'development'}`);
     logger.info(`Serving: ${app.get("env") === "development" ? 'Vite dev server' : 'Static files from /dist'}`);
-    logger.info('Winston logger initialized – startup check'); // Added test log message
   });
 })();
