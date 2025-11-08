@@ -7,9 +7,15 @@ import * as monaco from 'monaco-editor';
 // Import worker configuration (must be before Monaco initialization)
 import '../../monaco-workers';
 
+// Import Monaco configuration for language optimization
+import { configureMonaco } from '@/lib/monacoConfig';
+
 // Configure loader to use bundled Monaco instead of CDN
 // Setting paths to false disables AMD loader completely
 loader.config({ monaco, paths: { vs: '' } });
+
+// Configure Monaco with essential languages only (reduces bundle size)
+configureMonaco(monaco);
 
 interface EditorPaneProps {
   value: string;

@@ -1,26 +1,21 @@
 // Manual Monaco worker configuration for Vite ESM builds
 // This configures Monaco to use local bundled workers instead of CDN
+//
+// OPTIMIZATION: Only load essential workers for markdown editing
+// - editorWorker: Base editor functionality (required)
+// - Removed: json, css, html, ts workers (12MB+ of unnecessary code)
+//
+// Impact: For markdown editing, syntax highlighting happens in the preview pane
+// via rehype-prism, not in the Monaco editor. The editor only needs basic
+// text editing capabilities, not full IDE language services.
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 
 self.MonacoEnvironment = {
   getWorker(_: string, label: string) {
-    if (label === 'json') {
-      return new jsonWorker();
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker();
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker();
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker();
-    }
+    // All languages fall back to the basic editor worker
+    // This provides text editing, but not advanced language features
+    // (IntelliSense, type checking, etc.) which aren't needed for markdown
     return new editorWorker();
   },
 };
