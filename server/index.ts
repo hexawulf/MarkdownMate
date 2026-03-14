@@ -59,17 +59,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Error handling middleware
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  
-  logger.error(`Server Error ${status}: ${message}`, err);
-  res.status(status).json({ message });
-});
-
 (async () => {
-  const server = app.listen(5004);
+  const port = 5004;
+  const server = app.listen(port);
   
   // Setup static/vite based on environment
   if (app.get("env") === "development") {
@@ -79,7 +71,14 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     serveStatic(app);
   }
 
-  const port = 5004;
+  // Error handler must be registered AFTER all routes/middleware
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    
+    logger.error(`Server Error ${status}: ${message}`, err);
+    res.status(status).json({ message });
+  });
 
   // Graceful shutdown handlers
   process.on('SIGTERM', () => {

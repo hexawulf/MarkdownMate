@@ -5,9 +5,10 @@ import { URL } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import react from "@vitejs/plugin-react";
-import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const projectRoot = path.resolve(__dirname, "..");
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -21,7 +22,7 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
-  const rootPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "client");
+  const rootPath = path.resolve(projectRoot, "client");
 
   const vite = await createViteServer({
     root: rootPath,
@@ -29,25 +30,17 @@ export async function setupVite(app: Express, server: Server) {
     resolve: {
       alias: {
         "@": path.resolve(rootPath, "src"),
-        "@shared": path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "shared"),
-        "@assets": path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "attached_assets"),
+        "@shared": path.resolve(projectRoot, "shared"),
+        "@assets": path.resolve(projectRoot, "attached_assets"),
       },
     },
     optimizeDeps: {
       include: [
-        "mammoth",
-        "turndown",
         "file-saver",
-        "jspdf",
-        "html2canvas",
-        "@octokit/rest",
         "react",
         "react-dom",
         "wouter",
-        "use-sync-external-store",
-        "use-sync-external-store/shim"
       ],
-      force: true,
     },
     appType: "custom",
     configFile: false,
@@ -65,10 +58,10 @@ export async function setupVite(app: Express, server: Server) {
     },
     build: {
       sourcemap: true,
-      minify: false,
+      minify: true,
       target: "es2020",
       emptyOutDir: true,
-      outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "dist"),
+      outDir: path.resolve(projectRoot, "dist"),
       rollupOptions: {
         output: {
           format: "es",
@@ -105,7 +98,7 @@ export async function setupVite(app: Express, server: Server) {
     try {
       const clientTemplate = path.resolve(rootPath, "index.html");
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
+      template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${Date.now()}"`);
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
@@ -116,7 +109,7 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "dist");
+  const distPath = path.resolve(projectRoot, "dist");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(`Could not find the build directory: ${distPath}, make sure to build the client first`);

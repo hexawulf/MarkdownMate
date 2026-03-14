@@ -35,7 +35,6 @@ export default function Editor() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
   
@@ -114,7 +113,7 @@ export default function Editor() {
   // Keyboard shortcuts
   const shortcuts = createEditorShortcuts({
     onSave: saveNow,
-    onExport: () => setExportDialogOpen(true),
+    onExport: handleExportMarkdown,
     onHelp: () => setHelpDialogOpen(true),
     onBold: () => console.log('Bold formatting'),
     onItalic: () => console.log('Italic formatting'),

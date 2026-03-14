@@ -16,37 +16,21 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
-      "mammoth",
-      "turndown",
       "file-saver",
-      "jspdf",
-      "html2canvas",
-      "@octokit/rest",
       "react",
       "react-dom",
       "wouter",
-      "use-sync-external-store",
-      "use-sync-external-store/shim"
     ],
-    force: true,
   },
   root: path.resolve(path.dirname(new URL(import.meta.url).pathname), "client"),
   build: {
     outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "dist"),
     emptyOutDir: true,
     sourcemap: true,
-    minify: false, // Re-enable in production if needed
+    minify: true,
     target: "es2020",
     commonjsOptions: {
-      include: [
-        /mammoth/,
-        /turndown/,
-        /file-saver/,
-        /jspdf/,
-        /html2canvas/,
-        /@octokit/,
-        /node_modules/
-      ],
+      include: [/node_modules/],
       transformMixedEsModules: true,
     },
     rollupOptions: {

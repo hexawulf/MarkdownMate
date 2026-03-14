@@ -16,6 +16,8 @@ export function useAutosave({
 }: UseAutosaveOptions) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousContentRef = useRef<string>(content);
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
   const { updateDocument } = useDocumentsStore();
 
   const save = useCallback(async () => {
@@ -23,12 +25,12 @@ export function useAutosave({
     
     try {
       await updateDocument(documentId, { content });
-      onSave?.();
+      onSaveRef.current?.();
       previousContentRef.current = content;
     } catch (error) {
       console.error('Failed to autosave:', error);
     }
-  }, [documentId, content, updateDocument, onSave]);
+  }, [documentId, content, updateDocument]);
 
   useEffect(() => {
     // Don't autosave if content hasn't changed

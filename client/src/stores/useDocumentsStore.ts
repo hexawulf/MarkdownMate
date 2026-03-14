@@ -172,6 +172,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       await db.put('documents', updatedDoc);
       set(state => ({
         documents: state.documents.filter(d => d.id !== id),
+        currentDocument: state.currentDocument?.id === id ? null : state.currentDocument,
       }));
     } catch (error) {
       console.error('Failed to soft delete document:', error);
