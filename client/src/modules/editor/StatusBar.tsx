@@ -32,7 +32,7 @@ export function StatusBar({
           {documentTitle}
         </span>
         {hasUnsavedChanges && (
-          <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500">
+          <span className="flex items-center gap-1" style={{ color: 'var(--dt-gold)' }}>
             <Circle className="h-2 w-2 fill-current" />
             Unsaved
           </span>

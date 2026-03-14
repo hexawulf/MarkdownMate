@@ -1,0 +1,278 @@
+/* ================================================================
+   DoubleTrees Books (二林書店) — Main Stylesheet
+   Sepia palette inspired by traditional Chinese paper
+   ================================================================ */
+
+/* ── Palette ─────────────────────────────────── */
+:root {
+  --paper:      #EDE4D4;
+  --surface:    #E3D8C5;
+  --ink:        #2D2A24;
+  --ink-muted:  rgba(45, 42, 36, .60);
+  --border:     rgba(45, 42, 36, .15);
+  --seal-red:   #B2221C;
+  --seal-hover: #8E1A15;
+  --gold:       #996515;
+  --brown:      #5C4632;
+}
+
+/* ── Reset & base ────────────────────────────── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Inter", "Noto Sans TC", sans-serif;
+  line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Typography ──────────────────────────────── */
+h1, h2, h3 {
+  font-family: "Noto Serif TC", serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+a {
+  color: var(--brown);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--seal-red);
+}
+
+/* ── Scroll wrapper — centred paper strip ─────── */
+.scroll {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+  flex: 1;
+}
+
+/* ── Header ──────────────────────────────────── */
+.site-header {
+  padding: 2rem 0 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand__logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+}
+
+.brand__name {
+  font-family: "Noto Serif TC", serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.brand__tagline {
+  font-size: .85rem;
+  color: var(--ink-muted);
+}
+
+/* ── Navigation ──────────────────────────────── */
+.nav {
+  margin-top: 1rem;
+}
+
+.nav__list {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .25rem .75rem;
+}
+
+.nav__list a {
+  padding: .3rem .6rem;
+  border-radius: 4px;
+  font-size: .9rem;
+}
+
+.nav__list a:hover {
+  background: var(--surface);
+}
+
+.nav__list a.nav--active {
+  color: var(--seal-red);
+  font-weight: 500;
+}
+
+/* ── Sections ─────────────────────────────────── */
+.section {
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.section:last-of-type {
+  border-bottom: none;
+}
+
+.section__title {
+  font-size: 1.2rem;
+  margin-bottom: .75rem;
+}
+
+.section__text {
+  color: var(--ink-muted);
+  margin-bottom: 1rem;
+  font-size: .95rem;
+}
+
+/* ── Book cards ───────────────────────────────── */
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.5rem;
+}
+
+.book-card {
+  text-align: center;
+}
+
+.book-card__cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.book-card__title {
+  font-family: "Noto Serif TC", serif;
+  font-size: .95rem;
+  margin-top: .5rem;
+  font-weight: 500;
+}
+
+.book-card__author {
+  font-size: .82rem;
+  color: var(--ink-muted);
+}
+
+/* ── Category list ────────────────────────────── */
+.category-list {
+  list-style: none;
+  columns: 2;
+  gap: 1rem;
+}
+
+.category-list li {
+  padding: .35rem 0;
+  font-size: .95rem;
+}
+
+.category-list li::before {
+  content: "· ";
+  color: var(--seal-red);
+  font-weight: 700;
+}
+
+/* ── Book management (Task 5 placeholder) ─────── */
+.management {
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 1.5rem;
+}
+
+.management__note {
+  font-size: .85rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* ── Footer ───────────────────────────────────── */
+.site-footer {
+  text-align: center;
+  padding: 1.5rem 0;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  font-size: .82rem;
+  color: var(--ink-muted);
+}
+
+.site-footer a {
+  color: var(--gold);
+}
+
+/* ── Selection colour ─────────────────────────── */
+::selection {
+  background: #D4A574;
+  color: var(--ink);
+}
+
+/* ── Responsive breakpoints ────────────────── */
+@media (max-width: 768px) {
+  .scroll {
+    padding: 0 1.25rem;
+  }
+
+  .brand__logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .brand__name {
+    font-size: 1.2rem;
+  }
+
+  .book-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .category-list {
+    columns: 1;
+  }
+
+  .management {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .scroll {
+    padding: 0 1rem;
+  }
+
+  .book-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .nav__list {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .section__title {
+    font-size: 1.05rem;
+  }
+
+  .site-header {
+    padding: 1.5rem 0 1rem;
+  }
+}

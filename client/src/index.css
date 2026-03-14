@@ -5,78 +5,107 @@
 @tailwind utilities;
 
 :root {
-  --background: 255 255 255; /* #FFFFFF - white */
-  --foreground: 31 35 40; /* #1F2328 - GitHub near black */
-  --muted: 246 248 250; /* #F6F8FA - GitHub light gray */
-  --muted-foreground: 101 109 118; /* #656D76 - GitHub muted gray */
-  --popover: 255 255 255; /* #FFFFFF */
-  --popover-foreground: 31 35 40; /* #1F2328 - GitHub near black */
-  --card: 246 248 250; /* #F6F8FA - GitHub light gray */
-  --card-foreground: 31 35 40; /* #1F2328 - GitHub near black */
-  --border: 208 215 222; /* #D0D7DE - GitHub border gray */
-  --input: 208 215 222; /* #D0D7DE - GitHub border gray */
-  --primary: 9 105 218; /* #0969DA - GitHub blue */
-  --primary-foreground: 255 255 255; /* #FFFFFF */
-  --secondary: 246 248 250; /* #F6F8FA - GitHub light gray */
-  --secondary-foreground: 101 109 118; /* #656D76 - GitHub muted gray */
-  --accent: 26 127 55; /* #1A7F37 - GitHub green */
-  --accent-foreground: 255 255 255; /* #FFFFFF */
-  --destructive: 218 54 51; /* #DA3633 - GitHub red */
-  --destructive-foreground: 255 255 255; /* #FFFFFF */
-  --ring: 9 105 218; /* #0969DA - GitHub blue */
+  /* DoubleTrees Sepia — parchment / literary / warm */
+  --background: 237 228 212; /* #EDE4D4 - paper */
+  --foreground: 45 42 36; /* #2D2A24 - ink */
+  --muted: 227 216 197; /* #E3D8C5 - surface */
+  --muted-foreground: 138 130 121; /* #8A8279 - ink-muted */
+  --popover: 237 228 212; /* #EDE4D4 - paper */
+  --popover-foreground: 45 42 36; /* #2D2A24 - ink */
+  --card: 227 216 197; /* #E3D8C5 - surface */
+  --card-foreground: 45 42 36; /* #2D2A24 - ink */
+  --border: 208 200 186; /* #D0C8BA - warm border */
+  --input: 208 200 186; /* #D0C8BA - warm border */
+  --primary: 153 101 21; /* #996515 - gold */
+  --primary-foreground: 255 255 250; /* warm white */
+  --secondary: 227 216 197; /* #E3D8C5 - surface */
+  --secondary-foreground: 92 70 50; /* #5C4632 - brown */
+  --accent: 218 206 184; /* #DACEB8 - warm highlight */
+  --accent-foreground: 45 42 36; /* #2D2A24 - ink */
+  --destructive: 178 34 28; /* #B2221C - seal-red */
+  --destructive-foreground: 255 255 250; /* warm white */
+  --ring: 153 101 21; /* #996515 - gold */
   --radius: 0.5rem;
 
-  --sidebar-background: 255 255 255; /* #FFFFFF */
-  --sidebar-foreground: 31 35 40; /* #1F2328 - GitHub near black */
-  --sidebar-primary: 9 105 218; /* #0969DA - GitHub blue */
-  --sidebar-primary-foreground: 255 255 255; /* #FFFFFF */
-  --sidebar-accent: 246 248 250; /* #F6F8FA - GitHub light gray */
-  --sidebar-accent-foreground: 31 35 40; /* #1F2328 - GitHub near black */
-  --sidebar-border: 208 215 222; /* #D0D7DE - GitHub border gray */
-  --sidebar-ring: 9 105 218; /* #0969DA - GitHub blue */
+  --sidebar-background: 227 216 197; /* #E3D8C5 - surface */
+  --sidebar-foreground: 45 42 36; /* #2D2A24 - ink */
+  --sidebar-primary: 153 101 21; /* #996515 - gold */
+  --sidebar-primary-foreground: 255 255 250; /* warm white */
+  --sidebar-accent: 213 200 176; /* #D5C8B0 - warm selection */
+  --sidebar-accent-foreground: 45 42 36; /* #2D2A24 - ink */
+  --sidebar-border: 208 200 186; /* #D0C8BA - warm border */
+  --sidebar-ring: 153 101 21; /* #996515 - gold */
 
-  --chart-1: 9 105 218; /* #0969DA - GitHub blue */
-  --chart-2: 26 127 55; /* #1A7F37 - GitHub green */
-  --chart-3: 218 54 51; /* #DA3633 - GitHub red */
-  --chart-4: 130 80 223; /* #8250DF - GitHub purple */
-  --chart-5: 101 109 118; /* #656D76 - GitHub muted gray */
+  --chart-1: 153 101 21; /* #996515 - gold */
+  --chart-2: 61 110 53; /* #3D6E35 - green */
+  --chart-3: 178 34 28; /* #B2221C - seal-red */
+  --chart-4: 46 90 140; /* #2E5A8C - blue */
+  --chart-5: 138 130 121; /* #8A8279 - muted */
+
+  /* DoubleTrees palette tokens for direct use */
+  --dt-paper: #EDE4D4;
+  --dt-surface: #E3D8C5;
+  --dt-ink: #2D2A24;
+  --dt-ink-muted: #8A8279;
+  --dt-border: #D0C8BA;
+  --dt-gold: #996515;
+  --dt-gold-hover: #7A5010;
+  --dt-brown: #5C4632;
+  --dt-seal-red: #B2221C;
+  --dt-seal-hover: #8E1A15;
+  --dt-selection: #D4A574;
+  --dt-selection-fg: #2D2A24;
 }
 
 .dark {
-  --background: 13 17 23; /* #0D1117 - GitHub dark background */
-  --foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
-  --muted: 22 27 34; /* #161B22 - GitHub dark muted */
-  --muted-foreground: 139 148 158; /* #8B949E - GitHub dark muted text */
-  --popover: 22 27 34; /* #161B22 - GitHub dark muted */
-  --popover-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
-  --card: 22 27 34; /* #161B22 - GitHub dark muted */
-  --card-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
-  --border: 48 54 61; /* #30363D - GitHub dark border */
-  --input: 48 54 61; /* #30363D - GitHub dark border */
-  --primary: 88 166 255; /* #58A6FF - GitHub dark blue */
-  --primary-foreground: 13 17 23; /* #0D1117 - GitHub dark background */
-  --secondary: 22 27 34; /* #161B22 - GitHub dark muted */
-  --secondary-foreground: 139 148 158; /* #8B949E - GitHub dark muted text */
-  --accent: 63 185 80; /* #3FB950 - GitHub dark green */
-  --accent-foreground: 13 17 23; /* #0D1117 - GitHub dark background */
-  --destructive: 248 81 73; /* #F85149 - GitHub dark red */
-  --destructive-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
-  --ring: 88 166 255; /* #58A6FF - GitHub dark blue */
+  /* DoubleTrees Sepia Dark — warm parchment noir */
+  --background: 30 27 23; /* #1E1B17 - dark paper */
+  --foreground: 224 216 200; /* #E0D8C8 - light parchment text */
+  --muted: 42 38 33; /* #2A2621 - dark surface */
+  --muted-foreground: 154 146 137; /* #9A9289 - muted parchment */
+  --popover: 42 38 33; /* #2A2621 */
+  --popover-foreground: 224 216 200; /* #E0D8C8 */
+  --card: 42 38 33; /* #2A2621 */
+  --card-foreground: 224 216 200; /* #E0D8C8 */
+  --border: 74 69 62; /* #4A453E - shadow */
+  --input: 74 69 62; /* #4A453E */
+  --primary: 193 151 71; /* #C19747 - bright gold */
+  --primary-foreground: 30 27 23; /* #1E1B17 */
+  --secondary: 42 38 33; /* #2A2621 */
+  --secondary-foreground: 154 146 137; /* #9A9289 */
+  --accent: 58 52 44; /* #3A342C - warm highlight */
+  --accent-foreground: 224 216 200; /* #E0D8C8 */
+  --destructive: 184 58 46; /* #B83A2E */
+  --destructive-foreground: 224 216 200; /* #E0D8C8 */
+  --ring: 193 151 71; /* #C19747 - bright gold */
 
-  --sidebar-background: 22 27 34; /* #161B22 - GitHub dark muted */
-  --sidebar-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
-  --sidebar-primary: 88 166 255; /* #58A6FF - GitHub dark blue */
-  --sidebar-primary-foreground: 13 17 23; /* #0D1117 - GitHub dark background */
-  --sidebar-accent: 33 38 45; /* #21262D - GitHub dark accent */
-  --sidebar-accent-foreground: 201 209 217; /* #C9D1D9 - GitHub dark text */
-  --sidebar-border: 48 54 61; /* #30363D - GitHub dark border */
-  --sidebar-ring: 88 166 255; /* #58A6FF - GitHub dark blue */
+  --sidebar-background: 42 38 33; /* #2A2621 */
+  --sidebar-foreground: 224 216 200; /* #E0D8C8 */
+  --sidebar-primary: 193 151 71; /* #C19747 */
+  --sidebar-primary-foreground: 30 27 23; /* #1E1B17 */
+  --sidebar-accent: 58 52 44; /* #3A342C */
+  --sidebar-accent-foreground: 224 216 200; /* #E0D8C8 */
+  --sidebar-border: 74 69 62; /* #4A453E */
+  --sidebar-ring: 193 151 71; /* #C19747 */
 
-  --chart-1: 88 166 255; /* #58A6FF - GitHub dark blue */
-  --chart-2: 63 185 80; /* #3FB950 - GitHub dark green */
-  --chart-3: 248 81 73; /* #F85149 - GitHub dark red */
-  --chart-4: 139 148 255; /* #8B94FF - GitHub dark purple */
-  --chart-5: 139 148 158; /* #8B949E - GitHub dark muted text */
+  --chart-1: 193 151 71; /* #C19747 - gold */
+  --chart-2: 88 155 80; /* #589B50 - green */
+  --chart-3: 184 58 46; /* #B83A2E - red */
+  --chart-4: 90 130 180; /* #5A82B4 - blue */
+  --chart-5: 154 146 137; /* #9A9289 - muted */
+
+  --dt-paper: #1E1B17;
+  --dt-surface: #2A2621;
+  --dt-ink: #E0D8C8;
+  --dt-ink-muted: #9A9289;
+  --dt-border: #4A453E;
+  --dt-gold: #C19747;
+  --dt-gold-hover: #D4A85A;
+  --dt-brown: #A08060;
+  --dt-seal-red: #B83A2E;
+  --dt-seal-hover: #D04838;
+  --dt-selection: #6B5030;
+  --dt-selection-fg: #E0D8C8;
 }
 
 @layer base {
@@ -89,16 +118,51 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply antialiased bg-background text-foreground;
+    font-family: 'Inter', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+    line-height: 1.7;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold;
+    font-family: 'Noto Serif TC', 'Georgia', 'Cambria', serif;
+    font-weight: 700;
+    letter-spacing: 0.02em;
   }
 
   code {
     font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  }
+
+  ::selection {
+    background: var(--dt-selection);
+    color: var(--dt-selection-fg);
+  }
+
+  a {
+    color: var(--dt-brown);
+    transition: color 0.15s;
+  }
+
+  a:hover {
+    color: var(--dt-seal-red);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--dt-border);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--dt-ink-muted);
   }
 }
 
@@ -116,8 +180,13 @@
   }
 
   .prose-editor {
-    /* Removed prose-slate to allow tailwind.config.ts typography to take effect */
     @apply prose dark:prose-invert max-w-none;
+  }
+
+  .prose-editor h1,
+  .prose-editor h2,
+  .prose-editor h3 {
+    font-family: 'Noto Serif TC', Georgia, Cambria, serif;
   }
 
   /* Removed specific .prose-editor h1, h2, ..., p, ul, ol, li, code, pre, blockquote, table, th, td styles */

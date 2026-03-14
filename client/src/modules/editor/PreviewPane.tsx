@@ -25,7 +25,7 @@ export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
       } catch (error) {
         console.error('Error rendering markdown:', error);
         if (!cancelled) {
-          setHtml('<p class="text-red-500">Error rendering markdown</p>');
+          setHtml('<p style="color: var(--dt-seal-red)">Error rendering markdown</p>');
         }
       } finally {
         if (!cancelled) {
@@ -42,7 +42,7 @@ export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
   }, [markdown]);
 
   return (
-    <div className={`h-full w-full overflow-y-auto ${className}`}>
+    <div className={`h-full w-full overflow-y-auto bg-background ${className}`}>
       <div className="max-w-4xl mx-auto p-8">
         {isLoading && (
           <div className="flex items-center justify-center py-8">
@@ -50,12 +50,10 @@ export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
           </div>
         )}
         <div 
-          className="prose prose-slate dark:prose-invert max-w-none
+          className="prose dark:prose-invert max-w-none
                      prose-headings:scroll-mt-20
-                     prose-pre:bg-slate-900 prose-pre:text-slate-100
-                     prose-code:text-pink-600 dark:prose-code:text-pink-400
                      prose-code:before:content-none prose-code:after:content-none
-                     prose-img:rounded-lg prose-img:shadow-lg"
+                     prose-img:rounded-lg prose-img:shadow-md"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>

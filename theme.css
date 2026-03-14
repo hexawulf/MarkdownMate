@@ -1,0 +1,81 @@
+/*
+  DoubleTrees Sepia — Obsidian Theme (Template)
+  Palette matches 0xWulf Ghostty + DoubleTrees Sepia VS Code theme.
+
+  v0.1.0: token scaffold + minimal readable defaults
+*/
+
+:root {
+  /* --- Core parchment --- */
+  --dt-bg: #EDE4D4;
+  --dt-fg: #2D2A24;
+
+  /* --- Accent / UI --- */
+  --dt-accent: #996515;
+  --dt-selection-bg: #D4A574;
+  --dt-selection-fg: #2D2A24;
+
+  /* --- ANSI-inspired palette (Ghostty) --- */
+  --dt-red: #B83A2E;
+  --dt-green: #3D6E35;
+  --dt-yellow: #8B6914;
+  --dt-blue: #2E5A8C;
+  --dt-magenta: #7A4D8D;
+  --dt-cyan: #267878;
+
+  /* --- Neutrals --- */
+  --dt-muted: #8A8279;
+  --dt-muted-2: #6E665C;
+  --dt-shadow: #4A453E;
+
+}
+
+/* --- Map to Obsidian tokens (scoped to .theme-light to beat moonstone specificity) --- */
+.theme-light {
+  --background-primary: var(--dt-bg);
+  --background-primary-alt: color-mix(in srgb, var(--dt-bg) 92%, var(--dt-fg));
+  --background-secondary: color-mix(in srgb, var(--dt-bg) 88%, var(--dt-fg));
+  --background-secondary-alt: color-mix(in srgb, var(--dt-bg) 84%, var(--dt-fg));
+
+  --text-normal: var(--dt-fg);
+  --text-muted: var(--dt-muted);
+  --text-faint: var(--dt-muted-2);
+
+  --interactive-accent: var(--dt-accent);
+  --interactive-accent-hover: color-mix(in srgb, var(--dt-accent) 85%, black);
+
+  --text-selection: var(--dt-selection-fg);
+  --text-highlight-bg: var(--dt-selection-bg);
+
+  --link-color: var(--dt-blue);
+  --link-color-hover: color-mix(in srgb, var(--dt-blue) 80%, black);
+
+  --code-normal: var(--dt-fg);
+  --code-background: color-mix(in srgb, var(--dt-bg) 86%, var(--dt-fg));
+
+  --scrollbar-thumb-bg: color-mix(in srgb, var(--dt-fg) 25%, transparent);
+  --scrollbar-active-thumb-bg: color-mix(in srgb, var(--dt-fg) 35%, transparent);
+}
+
+/* Make selection match Ghostty feel */
+::selection {
+  background: var(--dt-selection-bg);
+  color: var(--dt-selection-fg);
+}
+
+/* Slightly stronger headings for print/screenshots */
+.markdown-preview-view h1,
+.markdown-preview-view h2,
+.markdown-preview-view h3,
+.markdown-source-view.mod-cm6 .cm-header {
+  color: var(--dt-fg);
+}
+
+/* Links */
+.markdown-preview-view a {
+  color: var(--link-color);
+  text-decoration-color: color-mix(in srgb, var(--link-color) 55%, transparent);
+}
+.markdown-preview-view a:hover {
+  color: var(--link-color-hover);
+}
