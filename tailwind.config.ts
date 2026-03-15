@@ -41,31 +41,33 @@ export default {
             '--tw-prose-invert-th-borders': theme('colors.border'),
             '--tw-prose-invert-td-borders': theme('colors.border'),
             'h1, h2, h3, h4, h5, h6': {
-              fontFamily: "'Noto Serif TC', Georgia, Cambria, serif",
-              fontWeight: '700',
-              letterSpacing: '0.02em',
+              fontFamily: 'inherit',
+              fontWeight: '600',
+              letterSpacing: 'normal',
             },
             'a': {
               color: 'var(--dt-brown)',
               textDecoration: 'none',
               transition: 'color 0.15s',
               '&:hover': {
-                color: 'var(--dt-seal-red)',
+                textDecoration: 'underline',
               },
             },
             'blockquote': {
-              borderLeftColor: 'var(--dt-gold)',
-              fontStyle: 'italic',
+              borderLeftColor: theme('colors.border'),
+              color: 'var(--dt-ink-muted)',
+              fontStyle: 'normal',
             },
             'code:not(pre code)': {
               backgroundColor: theme('colors.muted'),
               padding: '0.2em 0.4em',
               borderRadius: '0.25rem',
               color: theme('colors.foreground'),
-              'code::before': {
+              fontWeight: 'inherit',
+              '&::before': {
                 content: 'none',
               },
-              'code::after': {
+              '&::after': {
                 content: 'none',
               },
             },
