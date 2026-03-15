@@ -5,107 +5,108 @@
 @tailwind utilities;
 
 :root {
-  /* DoubleTrees Sepia — parchment / literary / warm */
-  --background: 237 228 212; /* #EDE4D4 - paper */
-  --foreground: 45 42 36; /* #2D2A24 - ink */
-  --muted: 227 216 197; /* #E3D8C5 - surface */
-  --muted-foreground: 138 130 121; /* #8A8279 - ink-muted */
-  --popover: 237 228 212; /* #EDE4D4 - paper */
-  --popover-foreground: 45 42 36; /* #2D2A24 - ink */
-  --card: 227 216 197; /* #E3D8C5 - surface */
-  --card-foreground: 45 42 36; /* #2D2A24 - ink */
-  --border: 208 200 186; /* #D0C8BA - warm border */
-  --input: 208 200 186; /* #D0C8BA - warm border */
-  --primary: 153 101 21; /* #996515 - gold */
-  --primary-foreground: 255 255 250; /* warm white */
-  --secondary: 227 216 197; /* #E3D8C5 - surface */
-  --secondary-foreground: 92 70 50; /* #5C4632 - brown */
-  --accent: 218 206 184; /* #DACEB8 - warm highlight */
-  --accent-foreground: 45 42 36; /* #2D2A24 - ink */
-  --destructive: 178 34 28; /* #B2221C - seal-red */
-  --destructive-foreground: 255 255 250; /* warm white */
-  --ring: 153 101 21; /* #996515 - gold */
-  --radius: 0.5rem;
+  /* Minimal White/Black GitHub-style */
+  --background: 255 255 255; /* #FFFFFF */
+  --foreground: 36 41 47; /* #24292f - charcoal */
+  --muted: 246 248 250; /* #f6f8fa - light gray surface */
+  --muted-foreground: 87 96 106; /* #57606a - slate */
+  --popover: 255 255 255; /* #FFFFFF */
+  --popover-foreground: 36 41 47; /* #24292f */
+  --card: 255 255 255; /* #FFFFFF */
+  --card-foreground: 36 41 47; /* #24292f */
+  --border: 208 215 222; /* #d0d7de - soft light gray */
+  --input: 208 215 222; /* #d0d7de */
+  --primary: 9 105 218; /* #0969da - github blue */
+  --primary-foreground: 255 255 255; /* white */
+  --secondary: 246 248 250; /* #f6f8fa */
+  --secondary-foreground: 36 41 47; /* #24292f */
+  --accent: 234 238 242; /* #eaeef2 - hover gray */
+  --accent-foreground: 36 41 47; /* #24292f */
+  --destructive: 207 34 46; /* #cf222e - red */
+  --destructive-foreground: 255 255 255; /* white */
+  --ring: 9 105 218; /* #0969da */
+  --radius: 0.375rem; /* 6px - crisp */
 
-  --sidebar-background: 227 216 197; /* #E3D8C5 - surface */
-  --sidebar-foreground: 45 42 36; /* #2D2A24 - ink */
-  --sidebar-primary: 153 101 21; /* #996515 - gold */
-  --sidebar-primary-foreground: 255 255 250; /* warm white */
-  --sidebar-accent: 213 200 176; /* #D5C8B0 - warm selection */
-  --sidebar-accent-foreground: 45 42 36; /* #2D2A24 - ink */
-  --sidebar-border: 208 200 186; /* #D0C8BA - warm border */
-  --sidebar-ring: 153 101 21; /* #996515 - gold */
+  --sidebar-background: 246 248 250; /* #f6f8fa */
+  --sidebar-foreground: 36 41 47; /* #24292f */
+  --sidebar-primary: 9 105 218; /* #0969da */
+  --sidebar-primary-foreground: 255 255 255; /* white */
+  --sidebar-accent: 234 238 242; /* #eaeef2 */
+  --sidebar-accent-foreground: 36 41 47; /* #24292f */
+  --sidebar-border: 208 215 222; /* #d0d7de */
+  --sidebar-ring: 9 105 218; /* #0969da */
 
-  --chart-1: 153 101 21; /* #996515 - gold */
-  --chart-2: 61 110 53; /* #3D6E35 - green */
-  --chart-3: 178 34 28; /* #B2221C - seal-red */
-  --chart-4: 46 90 140; /* #2E5A8C - blue */
-  --chart-5: 138 130 121; /* #8A8279 - muted */
+  --chart-1: 9 105 218; /* #0969da - blue */
+  --chart-2: 31 136 61; /* #1f883d - green */
+  --chart-3: 207 34 46; /* #cf222e - red */
+  --chart-4: 130 80 223; /* #8250df - purple */
+  --chart-5: 87 96 106; /* #57606a - muted */
 
-  /* DoubleTrees palette tokens for direct use */
-  --dt-paper: #EDE4D4;
-  --dt-surface: #E3D8C5;
-  --dt-ink: #2D2A24;
-  --dt-ink-muted: #8A8279;
-  --dt-border: #D0C8BA;
-  --dt-gold: #996515;
-  --dt-gold-hover: #7A5010;
-  --dt-brown: #5C4632;
-  --dt-seal-red: #B2221C;
-  --dt-seal-hover: #8E1A15;
-  --dt-selection: #D4A574;
-  --dt-selection-fg: #2D2A24;
+  /* Direct tokens */
+  --dt-paper: #ffffff;
+  --dt-surface: #f6f8fa;
+  --dt-ink: #24292f;
+  --dt-ink-muted: #57606a;
+  --dt-border: #d0d7de;
+  --dt-gold: #0969da; /* Repurposing gold to blue for primary accents */
+  --dt-gold-hover: #0550ae;
+  --dt-brown: #0969da; /* Repurposing brown to blue for links */
+  --dt-seal-red: #cf222e;
+  --dt-seal-hover: #a40e26;
+  --dt-selection: #b6e3ff;
+  --dt-selection-fg: #24292f;
 }
 
 .dark {
-  /* DoubleTrees Sepia Dark — warm parchment noir */
-  --background: 30 27 23; /* #1E1B17 - dark paper */
-  --foreground: 224 216 200; /* #E0D8C8 - light parchment text */
-  --muted: 42 38 33; /* #2A2621 - dark surface */
-  --muted-foreground: 154 146 137; /* #9A9289 - muted parchment */
-  --popover: 42 38 33; /* #2A2621 */
-  --popover-foreground: 224 216 200; /* #E0D8C8 */
-  --card: 42 38 33; /* #2A2621 */
-  --card-foreground: 224 216 200; /* #E0D8C8 */
-  --border: 74 69 62; /* #4A453E - shadow */
-  --input: 74 69 62; /* #4A453E */
-  --primary: 193 151 71; /* #C19747 - bright gold */
-  --primary-foreground: 30 27 23; /* #1E1B17 */
-  --secondary: 42 38 33; /* #2A2621 */
-  --secondary-foreground: 154 146 137; /* #9A9289 */
-  --accent: 58 52 44; /* #3A342C - warm highlight */
-  --accent-foreground: 224 216 200; /* #E0D8C8 */
-  --destructive: 184 58 46; /* #B83A2E */
-  --destructive-foreground: 224 216 200; /* #E0D8C8 */
-  --ring: 193 151 71; /* #C19747 - bright gold */
+  /* Minimal Dark GitHub-style */
+  --background: 13 17 23; /* #0d1117 - dark */
+  --foreground: 201 209 217; /* #c9d1d9 - light gray text */
+  --muted: 22 27 34; /* #161b22 - dark surface */
+  --muted-foreground: 139 148 158; /* #8b949e - slate */
+  --popover: 22 27 34; /* #161b22 */
+  --popover-foreground: 201 209 217; /* #c9d1d9 */
+  --card: 13 17 23; /* #0d1117 */
+  --card-foreground: 201 209 217; /* #c9d1d9 */
+  --border: 48 54 61; /* #30363d - subtle dark border */
+  --input: 48 54 61; /* #30363d */
+  --primary: 47 129 247; /* #2f81f7 - light blue */
+  --primary-foreground: 255 255 255; /* #ffffff */
+  --secondary: 22 27 34; /* #161b22 */
+  --secondary-foreground: 139 148 158; /* #8b949e */
+  --accent: 33 38 45; /* #21262d - hover */
+  --accent-foreground: 201 209 217; /* #c9d1d9 */
+  --destructive: 248 81 73; /* #f85149 - red */
+  --destructive-foreground: 255 255 255; /* #ffffff */
+  --ring: 47 129 247; /* #2f81f7 */
 
-  --sidebar-background: 42 38 33; /* #2A2621 */
-  --sidebar-foreground: 224 216 200; /* #E0D8C8 */
-  --sidebar-primary: 193 151 71; /* #C19747 */
-  --sidebar-primary-foreground: 30 27 23; /* #1E1B17 */
-  --sidebar-accent: 58 52 44; /* #3A342C */
-  --sidebar-accent-foreground: 224 216 200; /* #E0D8C8 */
-  --sidebar-border: 74 69 62; /* #4A453E */
-  --sidebar-ring: 193 151 71; /* #C19747 */
+  --sidebar-background: 22 27 34; /* #161b22 */
+  --sidebar-foreground: 201 209 217; /* #c9d1d9 */
+  --sidebar-primary: 47 129 247; /* #2f81f7 */
+  --sidebar-primary-foreground: 255 255 255; /* #ffffff */
+  --sidebar-accent: 33 38 45; /* #21262d */
+  --sidebar-accent-foreground: 201 209 217; /* #c9d1d9 */
+  --sidebar-border: 48 54 61; /* #30363d */
+  --sidebar-ring: 47 129 247; /* #2f81f7 */
 
-  --chart-1: 193 151 71; /* #C19747 - gold */
-  --chart-2: 88 155 80; /* #589B50 - green */
-  --chart-3: 184 58 46; /* #B83A2E - red */
-  --chart-4: 90 130 180; /* #5A82B4 - blue */
-  --chart-5: 154 146 137; /* #9A9289 - muted */
+  --chart-1: 47 129 247; /* #2f81f7 - blue */
+  --chart-2: 46 160 67; /* #2ea043 - green */
+  --chart-3: 248 81 73; /* #f85149 - red */
+  --chart-4: 163 113 247; /* #a371f7 - purple */
+  --chart-5: 139 148 158; /* #8b949e - muted */
 
-  --dt-paper: #1E1B17;
-  --dt-surface: #2A2621;
-  --dt-ink: #E0D8C8;
-  --dt-ink-muted: #9A9289;
-  --dt-border: #4A453E;
-  --dt-gold: #C19747;
-  --dt-gold-hover: #D4A85A;
-  --dt-brown: #A08060;
-  --dt-seal-red: #B83A2E;
-  --dt-seal-hover: #D04838;
-  --dt-selection: #6B5030;
-  --dt-selection-fg: #E0D8C8;
+  /* Direct tokens */
+  --dt-paper: #0d1117;
+  --dt-surface: #161b22;
+  --dt-ink: #c9d1d9;
+  --dt-ink-muted: #8b949e;
+  --dt-border: #30363d;
+  --dt-gold: #2f81f7;
+  --dt-gold-hover: #58a6ff;
+  --dt-brown: #2f81f7;
+  --dt-seal-red: #f85149;
+  --dt-seal-hover: #ff7b72;
+  --dt-selection: #1f4273;
+  --dt-selection-fg: #c9d1d9;
 }
 
 @layer base {
@@ -119,18 +120,16 @@
 
   body {
     @apply antialiased bg-background text-foreground;
-    font-family: 'Inter', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
-    line-height: 1.7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    line-height: 1.5;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Noto Serif TC', 'Georgia', 'Cambria', serif;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    font-weight: 600;
   }
 
   code {
-    font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   }
 
   ::selection {
@@ -140,11 +139,12 @@
 
   a {
     color: var(--dt-brown);
+    text-decoration: none;
     transition: color 0.15s;
   }
 
   a:hover {
-    color: var(--dt-seal-red);
+    text-decoration: underline;
   }
 
   ::-webkit-scrollbar {
@@ -182,16 +182,6 @@
   .prose-editor {
     @apply prose dark:prose-invert max-w-none;
   }
-
-  .prose-editor h1,
-  .prose-editor h2,
-  .prose-editor h3 {
-    font-family: 'Noto Serif TC', Georgia, Cambria, serif;
-  }
-
-  /* Removed specific .prose-editor h1, h2, ..., p, ul, ol, li, code, pre, blockquote, table, th, td styles */
-  /* These should now be handled by the typography settings in tailwind.config.ts */
-
 }
 
 @keyframes blink {

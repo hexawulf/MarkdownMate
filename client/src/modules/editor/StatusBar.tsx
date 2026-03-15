@@ -26,13 +26,13 @@ export function StatusBar({
   }, [lastSaved]);
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 text-sm border-t bg-muted/50">
+    <div className="flex items-center justify-between px-4 py-2 text-sm border-t bg-muted/30">
       <div className="flex items-center gap-4">
         <span className="font-medium truncate max-w-xs" title={documentTitle}>
           {documentTitle}
         </span>
         {hasUnsavedChanges && (
-          <span className="flex items-center gap-1" style={{ color: 'var(--dt-gold)' }}>
+          <span className="flex items-center gap-1 text-primary">
             <Circle className="h-2 w-2 fill-current" />
             Unsaved
           </span>

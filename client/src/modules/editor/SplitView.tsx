@@ -31,31 +31,31 @@ export function SplitView({
   return (
     <div className="flex flex-col h-full">
       {/* View mode toolbar */}
-      <div className="flex items-center gap-2 p-2 border-b bg-background">
-        <div className="flex gap-1 rounded-md border p-1">
+      <div className="flex items-center gap-2 p-2 border-b bg-muted/30">
+        <div className="flex gap-1 rounded-md bg-muted/50 p-1">
           <Button
-            variant={viewMode === 'editor' ? 'default' : 'ghost'}
+            variant={viewMode === 'editor' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => onViewModeChange('editor')}
-            className="gap-2"
+            className={`gap-2 ${viewMode === 'editor' ? 'shadow-sm bg-background' : ''}`}
           >
             <Code className="h-4 w-4" />
             Editor
           </Button>
           <Button
-            variant={viewMode === 'split' ? 'default' : 'ghost'}
+            variant={viewMode === 'split' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => onViewModeChange('split')}
-            className="gap-2"
+            className={`gap-2 ${viewMode === 'split' ? 'shadow-sm bg-background' : ''}`}
           >
             <Columns className="h-4 w-4" />
             Split
           </Button>
           <Button
-            variant={viewMode === 'preview' ? 'default' : 'ghost'}
+            variant={viewMode === 'preview' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => onViewModeChange('preview')}
-            className="gap-2"
+            className={`gap-2 ${viewMode === 'preview' ? 'shadow-sm bg-background' : ''}`}
           >
             <Eye className="h-4 w-4" />
             Preview
