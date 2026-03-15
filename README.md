@@ -3,6 +3,7 @@
 **A fast, local-first markdown editor with live preview, autosave, and GitHub-flavored markdown support.**
 
 <div align="center">
+  <img src="https://img.shields.io/badge/version-3.0.0-blue" alt="v3.0.0" />
   <img src="https://img.shields.io/badge/React-18-blue?logo=react" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Vite-7-purple?logo=vite" alt="Vite" />
@@ -12,67 +13,74 @@
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 
-*   [Features](#features)
-*   [Tech Stack](#tech-stack)
-*   [Quick Start](#quick-start)
-*   [Deployment](#deployment)
-*   [Keyboard Shortcuts](#keyboard-shortcuts)
-*   [Export Options](#export-options)
-*   [Privacy & Security](#privacy--security)
-*   [Contributing](#contributing)
-*   [License](#license)
-
----
-
-## ✨ Features
-
-MarkdownMate is a single-user, local-first markdown editor designed for speed and simplicity:
-
-*   **✍️ Live Preview**: Split view with real-time markdown rendering
-*   **💻 Monaco Editor**: VSCode-like editing experience with syntax highlighting
-*   **📄 GitHub Flavored Markdown**: Full GFM support (tables, task lists, strikethrough, code blocks)
-*   **🔢 Math Support**: KaTeX integration for beautiful mathematical formulas ($...$, $$...$$)
-*   **💾 Auto-save**: Automatic saving with 500ms debounce
-*   **🗄️ Local Storage**: All documents stored in browser IndexedDB - no server, no sign-up
-*   **📱 Responsive UI**: Clean, modern interface that works on desktop and mobile
-*   **📤 Multiple Export Formats**: Export to .md, self-contained .html, or print to PDF
-*   **🎨 Theme Support**: Light/dark mode toggle
-*   **⚡ Fast**: No backend dependencies, instant startup
-*   **🔒 Private**: All data stays on your device
-*   **⌨️ Keyboard Shortcuts**: Full keyboard navigation for power users
-*   **📊 Status Bar**: Word/character count, cursor position, last saved time
-*   **ℹ️ About Modal**: Access app info, version, GitHub links, and keyboard shortcuts guide
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Quick Start](#quick-start)
+- [App Behavior](#app-behavior)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Export Options](#export-options)
+- [Deployment](#deployment)
+- [Privacy & Security](#privacy--security)
+- [Contributing](#contributing)
+- [Version History](#version-history)
+- [License](#license)
 
 ---
 
-## 🛠️ Tech Stack
+## Overview
+
+MarkdownMate is a single-user, local-first markdown editor designed for speed and simplicity. All documents are stored in browser IndexedDB — no accounts, no external APIs, no data leaves your device.
+
+The editor provides a VSCode-like writing experience powered by Monaco Editor, with real-time GitHub-flavored markdown preview, KaTeX math rendering, and syntax-highlighted code blocks.
+
+---
+
+## Features
+
+- **Live Preview** — Split view with real-time markdown rendering (editor-only, split, and preview-only modes)
+- **Monaco Editor** — VSCode-like editing with syntax highlighting, configurable font size, and word wrap
+- **GitHub Flavored Markdown** — Tables, task lists, strikethrough, and fenced code blocks via remark-gfm
+- **Math Support** — KaTeX rendering for inline (`$...$`) and block (`$$...$$`) math expressions
+- **Autosave** — Automatic saving to IndexedDB with 500ms debounce
+- **Document Management** — Create, rename, duplicate, soft-delete, and search across documents
+- **Multiple Export Formats** — Export to `.md`, self-contained `.html`, or print to PDF
+- **Light/Dark Theme** — Toggle between light and dark modes
+- **Status Bar** — Word count, character count, cursor position, and last-saved timestamp
+- **Keyboard Shortcuts** — Save, export, and help accessible via keyboard
+- **About Modal** — App info, version, resource links, and shortcuts reference
+- **Resizable Panels** — Drag the split-view divider to adjust editor/preview proportions
+
+---
+
+## Tech Stack
 
 **Frontend:**
-- React 18
-- TypeScript 5
-- Vite 7
-- Tailwind CSS 3
-- shadcn/ui components
-- Monaco Editor (ESM bundle with local workers)
-- IndexedDB (via idb)
+- React 18 with TypeScript
+- Vite 7 (dev server and production bundler)
+- Tailwind CSS 3 with shadcn/ui components
+- Monaco Editor (ESM bundle with local workers — no CDN)
+- Zustand (state management)
+- IndexedDB via `idb` (document persistence)
+- wouter (client-side routing)
 
 **Markdown Processing:**
-- unified
+- unified / remark-parse (markdown parsing)
 - remark-gfm (GitHub Flavored Markdown)
-- remark-math (Math notation)
-- rehype-katex (Math rendering)
-- rehype-prism-plus (Syntax highlighting)
+- remark-math + rehype-katex (math rendering)
+- rehype-prism-plus (syntax highlighting)
 - rehype-sanitize (XSS protection)
 
 **Server:**
-- Express (minimal static file serving)
-- helmet (security headers)
+- Express (static file serving in production, Vite proxy in development)
+- helmet (strict Content Security Policy and security headers)
+- winston (structured logging)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -80,123 +88,128 @@ MarkdownMate is a single-user, local-first markdown editor designed for speed an
 
 ### Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/hexawulf/MarkdownMate.git
-   cd MarkdownMate
-   ```
+```bash
+git clone https://github.com/hexawulf/MarkdownMate.git
+cd MarkdownMate
+npm install
+```
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+### Development
 
-3. **Run development server:**
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
-   The app will be available at `http://localhost:5004`
+Opens at `http://localhost:5004`. Vite handles hot module replacement.
 
-4. **Build for production:**
-   ```bash
-   npm run build
-   ```
-
-5. **Start production server:**
-   ```bash
-   npm start
-   ```
-
----
-
-## ☁️ Deployment
-
-### Self-hosted on Raspberry Pi (piapps)
-
-MarkdownMate is designed to run on a self-hosted server. Here's how to deploy it on a Raspberry Pi or similar device:
-
-#### 1. Build the application
+### Production Build
 
 ```bash
 npm run build
+npm start
 ```
 
-This creates a `dist/` folder with:
-- Static client files (HTML, CSS, JS)
-- Compiled server file (`index.js`)
+Builds the client with Vite and bundles the server with esbuild. The production server serves static files from `dist/`.
 
-#### 2. Configure PM2 (process manager)
+### Available Scripts
 
-The included `ecosystem.config.cjs` is set up for PM2:
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server (Vite + Express) |
+| `npm run build` | Build client and server for production |
+| `npm start` | Run production server (`dist/index.js`) |
+| `npm run check` | TypeScript type-checking (`tsc`) |
+| `npm run typecheck` | TypeScript type-checking (`tsc --noEmit`) |
 
-```javascript
-module.exports = {
-  apps: [{
-    name: 'markdownmate',
-    script: './dist/index.js',
-    instances: 1,
-    exec_mode: 'fork',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 5004
-    }
-  }]
-};
-```
+---
 
-Start with PM2:
+## App Behavior
+
+### Startup
+
+On first load, MarkdownMate opens IndexedDB and loads existing documents. If no documents exist, a single "Untitled Document" is created automatically. The app waits for IndexedDB to finish loading before rendering the editor, preventing duplicate document creation on startup.
+
+### Storage
+
+All documents are stored in browser IndexedDB under the database `markdownmate-db`. There is no server-side storage — the Express server only serves static files and provides a `/api/health` endpoint.
+
+Documents support:
+- Title, content, tags, timestamps (created/updated)
+- Soft-delete with restore capability
+- Duplicate with "(Copy)" suffix
+
+### Autosave
+
+Content changes trigger an autosave after 500ms of inactivity. The status bar shows the last-saved timestamp and an "Unsaved" indicator when changes are pending. Manual save is available via `Ctrl+S`.
+
+### Views
+
+The editor supports three view modes, toggled via the toolbar:
+- **Editor** — Full-width Monaco editor
+- **Split** — Side-by-side editor and preview with a draggable divider
+- **Preview** — Full-width rendered markdown
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + S` | Save document |
+| `Ctrl/Cmd + E` | Export as Markdown |
+| `Ctrl/Cmd + /` | Open keyboard shortcuts dialog |
+
+---
+
+## Export Options
+
+### Markdown (.md)
+Exports raw markdown content as a downloadable `.md` file.
+
+### Self-contained HTML
+Exports a single HTML file with inlined CSS, rendered markdown, KaTeX math, and syntax-highlighted code blocks. Ready to share or archive.
+
+### Print to PDF
+Opens the browser print dialog. The app includes a print stylesheet optimized for clean page layout and proper breaks.
+
+---
+
+## Deployment
+
+### Self-hosted with PM2
+
+MarkdownMate is designed for self-hosting. Build and run with PM2:
+
 ```bash
+npm run build
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
 ```
 
-#### 3. Nginx Reverse Proxy
+The included `ecosystem.config.cjs` runs the production server on port 5004.
 
-Create `/etc/nginx/sites-available/markdownmate`:
+### Nginx Reverse Proxy
+
+Example configuration for `nginx`:
 
 ```nginx
 server {
-    listen 80;
-    listen [::]:80;
-    server_name markdown.piapps.dev;
-
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
-}
-
-server {
     listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name markdown.piapps.dev;
+    server_name markdown.yourdomain.com;
 
-    # SSL Configuration (use certbot for Let's Encrypt)
-    ssl_certificate /etc/letsencrypt/live/markdown.piapps.dev/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/markdown.piapps.dev/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_certificate /etc/letsencrypt/live/markdown.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/markdown.yourdomain.com/privkey.pem;
 
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-
-    # Proxy to Node.js app
     location / {
         proxy_pass http://127.0.0.1:5004;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
     }
 
-    # Static assets caching
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         proxy_pass http://127.0.0.1:5004;
         expires 1y;
@@ -205,125 +218,65 @@ server {
 }
 ```
 
-Enable and restart:
-```bash
-sudo ln -s /etc/nginx/sites-available/markdownmate /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-#### 4. SSL Certificate (Let's Encrypt)
+### SSL with Let's Encrypt
 
 ```bash
-sudo certbot --nginx -d markdown.piapps.dev
+sudo certbot --nginx -d markdown.yourdomain.com
 ```
 
 ---
 
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl/Cmd + S` | Save document manually |
-| `Ctrl/Cmd + E` | Open export dialog |
-| `Ctrl/Cmd + /` | Show About modal with keyboard shortcuts |
-| `Ctrl/Cmd + B` | Bold formatting (planned) |
-| `Ctrl/Cmd + I` | Italic formatting (planned) |
-| `Ctrl/Cmd + K` | Inline code (planned) |
-| `Ctrl/Cmd + Shift + P` | Command palette (planned) |
-
----
-
-## 📤 Export Options
-
-### 1. Markdown (.md)
-Export raw markdown file with all formatting preserved.
-
-### 2. Self-contained HTML
-Export as a single HTML file with:
-- Inlined CSS styles
-- Rendered markdown
-- KaTeX math rendering
-- Syntax-highlighted code blocks
-- Ready to share or archive
-
-### 3. Print to PDF
-Use your browser's print dialog (Ctrl/Cmd + P) to export as PDF. The included print stylesheet ensures:
-- Clean layout
-- Proper page breaks
-- Link URLs displayed in footnotes
-- Optimized typography
-
----
-
-## 🔒 Privacy & Security
+## Privacy & Security
 
 ### Data Storage
-- **100% client-side**: All documents stored in browser IndexedDB
-- **No server uploads**: Your markdown never leaves your device
-- **No authentication**: No accounts, no tracking, no cookies
-- **Offline capable**: Works without internet connection
+- **100% client-side** — All documents stored in browser IndexedDB
+- **No server uploads** — Markdown content never leaves your device
+- **No accounts** — No authentication, no tracking, no cookies
+- **No analytics** — No external API calls or data collection
 
 ### Security Measures
-- **HTML Sanitization**: All rendered HTML is sanitized with `rehype-sanitize`
-- **Strict CSP Headers**: Content Security Policy prevents XSS attacks
-- **helmet.js**: Security headers configured on server
-- **No eval()**: No dynamic code execution, Monaco bundled locally with ESM
-- **Data URLs for images**: Paste/drop images are embedded as data URLs (no external requests)
-- **No CDN Dependencies**: All code and workers bundled locally for maximum security
+- **HTML sanitization** via `rehype-sanitize` (XSS protection)
+- **Strict CSP headers** — Content Security Policy via helmet.js blocks remote scripts, eval, and external connections
+- **No CDN dependencies** — All code, fonts, and Monaco workers bundled locally
+- **No `eval()`** — No dynamic code execution anywhere in the codebase
+- **Data URL images** — Pasted/dropped images embedded as data URLs (no external requests)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Please follow these steps:
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, code standards, and commit message conventions.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes and test thoroughly
-4. Commit with clear messages: `git commit -m 'feat: add X feature'`
-5. Push to your fork: `git push origin feature/your-feature-name`
-6. Open a Pull Request
-
-### Development Guidelines
-
-- Run `npm run check` before committing (TypeScript validation)
-- Run `npm run build` to ensure builds succeed
-- Follow existing code patterns
-- Update README if adding features
-- No new external dependencies without discussion
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+```bash
+npm run check   # TypeScript validation
+npm run build   # Build verification
+```
 
 ---
 
-## 📄 License
+## Version History
 
-MIT License - see [LICENSE](LICENSE) file for details.
+See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+
+| Version | Date | Highlights |
+|---------|------|------------|
+| **3.0.0** | 2026-03-15 | GitHub-minimal theme, startup race condition fix, Monaco bundle optimization, codebase hardening |
+| **2.0.0** | 2025-11-02 | Local-first rewrite — IndexedDB storage, Monaco editor, split view, autosave, export |
+| **1.0.0** | 2024-12-06 | Initial release — collaborative editing with Firebase |
 
 ---
 
-## 🗺️ Roadmap
+## License
 
-Planned features:
-- [ ] Image paste/drop handler (convert to data URLs)
-- [ ] TOC panel (auto-generated from headings)
-- [ ] Find in preview (/ hotkey)
-- [ ] Document templates (blog post, meeting notes, README)
-- [ ] PWA support (offline app-shell)
-- [ ] Vim mode for editor
-- [ ] Front-matter metadata editor
-- [ ] Mermaid diagram support
-- [ ] Tags and advanced search
-- [ ] Export to Gist (optional, behind feature flag)
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
-  <p>Made with ❤️ for markdown lovers</p>
+  <p>Made with care for markdown lovers</p>
   <p>
-    <a href="https://github.com/hexawulf/MarkdownMate">⭐ Star this Repo</a> |
-    <a href="https://github.com/hexawulf/MarkdownMate/issues/new">🐛 Report a Bug</a> |
-    <a href="https://github.com/hexawulf/MarkdownMate/issues/new">💡 Request a Feature</a>
+    <a href="https://github.com/hexawulf/MarkdownMate">Star on GitHub</a> ·
+    <a href="https://github.com/hexawulf/MarkdownMate/issues/new">Report a Bug</a> ·
+    <a href="https://github.com/hexawulf/MarkdownMate/issues/new">Request a Feature</a>
   </p>
 </div>

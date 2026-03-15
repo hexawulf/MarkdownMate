@@ -5,6 +5,25 @@ All notable changes to MarkdownMate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-03-15
+
+### Visual & UX Overhaul
+
+This release introduces a refined visual identity, startup stability improvements, and codebase hardening.
+
+### ✨ Added
+- **GitHub-Minimal Theme**: Complete visual overhaul with a clean, GitHub-inspired design language
+- **Monaco Bundle Optimization**: Removed unused Monaco workers, reducing bundle size
+
+### 🐛 Fixed
+- **Startup Race Condition**: Fixed a bug where a spurious "Untitled Document" was created on every app load due to a race between IndexedDB loading and the auto-create logic. The editor now waits for the initial document load to complete before deciding whether to create a default document.
+
+### 🔧 Changed
+- **Codebase Hardening**: Removed dead code, fixed minor bugs, cleaned up dependencies
+- **Version**: Bumped to 3.0.0 across package.json, About modal, and documentation
+
+---
+
 ## [2.0.0] - 2025-11-02
 
 ### 🎉 Major Refactoring: Local-First Architecture
