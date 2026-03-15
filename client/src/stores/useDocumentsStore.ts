@@ -46,6 +46,7 @@ interface DocumentsState {
   documents: Document[];
   currentDocument: Document | null;
   isLoading: boolean;
+  hasLoadedInitialDocuments: boolean;
   
   // CRUD operations
   loadDocuments: () => Promise<void>;
@@ -68,18 +69,18 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
   documents: [],
   currentDocument: null,
   isLoading: false,
+  hasLoadedInitialDocuments: false,
 
   loadDocuments: async () => {
     set({ isLoading: true });
     try {
       const db = await getDB();
       const allDocs = await db.getAllFromIndex('documents', 'by-updatedAt');
-      // Filter out deleted documents and reverse to show newest first
       const activeDocs = allDocs.filter(doc => !doc.isDeleted).reverse();
-      set({ documents: activeDocs, isLoading: false });
+      set({ documents: activeDocs, isLoading: false, hasLoadedInitialDocuments: true });
     } catch (error) {
       console.error('Failed to load documents:', error);
-      set({ isLoading: false });
+      set({ isLoading: false, hasLoadedInitialDocuments: true });
     }
   },
 

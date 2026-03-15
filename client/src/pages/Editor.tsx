@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDocumentsStore, type Document } from '@/stores/useDocumentsStore';
 import { DocumentsSidebar } from '@/components/DocumentsSidebar';
 import { SplitView, type ViewMode } from '@/modules/editor/SplitView';
@@ -27,7 +27,7 @@ import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
 import { AboutModal } from '@/modules/about';
 
 export default function Editor() {
-  const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument } = useDocumentsStore();
+  const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument, hasLoadedInitialDocuments } = useDocumentsStore();
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
@@ -37,6 +37,7 @@ export default function Editor() {
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
+  const hasAutoCreated = useRef(false);
   
   const { theme, toggleTheme } = useTheme();
 
@@ -45,14 +46,16 @@ export default function Editor() {
     loadDocuments();
   }, [loadDocuments]);
 
-  // Auto-create first document if none exist
+  // Auto-create first document only after initial IndexedDB load completes
   useEffect(() => {
+    if (!hasLoadedInitialDocuments || hasAutoCreated.current) return;
     if (documents.length === 0 && !currentDocument) {
+      hasAutoCreated.current = true;
       createDocument('Untitled Document', '# Welcome to MarkdownMate\n\nStart writing...');
     }
-  }, [documents, currentDocument, createDocument]);
+  }, [hasLoadedInitialDocuments, documents, currentDocument, createDocument]);
 
-  // Set initial document
+  // Set initial document after load
   useEffect(() => {
     if (!currentDocument && documents.length > 0) {
       setCurrentDocument(documents[0]);
@@ -123,7 +126,7 @@ export default function Editor() {
 
   useKeyboardShortcuts({ shortcuts });
 
-  if (!currentDocument) {
+  if (!hasLoadedInitialDocuments || !currentDocument) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
