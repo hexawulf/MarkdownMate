@@ -120,24 +120,27 @@ interface EditorPaneProps {
   value: string;
   onChange: (value: string) => void;
   onCursorChange?: (line: number, column: number) => void;
+  onEditorMount?: (editor: editor.IStandaloneCodeEditor) => void;
   fontSize?: number;
   wordWrap?: boolean;
   vimMode?: boolean;
 }
 
-export function EditorPane({ 
-  value, 
-  onChange, 
+export function EditorPane({
+  value,
+  onChange,
   onCursorChange,
+  onEditorMount,
   fontSize = 14,
   wordWrap = true,
-  vimMode = false 
+  vimMode = false
 }: EditorPaneProps) {
   const { theme } = useTheme();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
+    onEditorMount?.(editor);
 
     // Track cursor position
     editor.onDidChangeCursorPosition((e) => {
