@@ -48,8 +48,10 @@ export function useSyncScroll({ editor, previewRef, enabled }: UseSyncScrollOpti
     };
 
     const editorScrollListener = editor.onDidScrollChange((e) => {
-      if (!e.scrollTopChanged) return;
-      if (isEcho('editor', e.scrollTop)) return;
+      if (e.scrollTopChanged && isEcho('editor', e.scrollTop)) return;
+      // scrollHeightChanged matters too: editor-only geometry changes (font
+      // size, word wrap) shift the proportional ratio without any scroll.
+      if (!e.scrollTopChanged && !e.scrollHeightChanged) return;
       syncPreviewToEditor();
     });
 
