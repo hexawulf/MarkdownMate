@@ -9,13 +9,17 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
+// Explicit check so an unset NODE_ENV fails closed to the strict CSP
+const isDev = process.env.NODE_ENV === "development";
+
 // Security headers with helmet - strict local-only CSP
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],                    // no remote scripts, no eval
+      // Vite dev mode injects an inline react-refresh preamble; production stays strict
+      scriptSrc: isDev ? ["'self'", "'unsafe-inline'"] : ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],  // allow inline for Monaco/print CSS
       imgSrc: ["'self'", "data:", "blob:"],     // allow data URLs for images
       fontSrc: ["'self'", "data:"],             // allow data URLs for fonts
