@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { editor } from 'monaco-editor';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { EditorPane } from './EditorPane';
 import { PreviewPane } from './PreviewPane';
 import { Button } from '@/components/ui/button';
+import { useSyncScroll } from '@/hooks/useSyncScroll';
 import { Code, Eye, Columns } from 'lucide-react';
 
 export type ViewMode = 'editor' | 'preview' | 'split';
@@ -16,6 +18,7 @@ interface SplitViewProps {
   fontSize?: number;
   wordWrap?: boolean;
   vimMode?: boolean;
+  syncScroll?: boolean;
 }
 
 export function SplitView({
@@ -27,7 +30,24 @@ export function SplitView({
   fontSize = 14,
   wordWrap = true,
   vimMode = false,
+  syncScroll = true,
 }: SplitViewProps) {
+  const [editorInstance, setEditorInstance] = useState<editor.IStandaloneCodeEditor | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // Panes remount when the view mode changes; drop the disposed editor instance
+  useEffect(() => {
+    if (viewMode !== 'split') {
+      setEditorInstance(null);
+    }
+  }, [viewMode]);
+
+  useSyncScroll({
+    editor: editorInstance,
+    previewRef,
+    enabled: syncScroll && viewMode === 'split',
+  });
+
   return (
     <div className="flex flex-col h-full">
       {/* View mode toolbar */}
@@ -87,6 +107,7 @@ export function SplitView({
                 value={content}
                 onChange={onChange}
                 onCursorChange={onCursorChange}
+                onEditorMount={setEditorInstance}
                 fontSize={fontSize}
                 wordWrap={wordWrap}
                 vimMode={vimMode}
@@ -94,7 +115,7 @@ export function SplitView({
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={50} minSize={20}>
-              <PreviewPane markdown={content} />
+              <PreviewPane ref={previewRef} markdown={content} />
             </ResizablePanel>
           </ResizablePanelGroup>
         )}

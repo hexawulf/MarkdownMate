@@ -9,6 +9,7 @@ import { useKeyboardShortcuts, createEditorShortcuts } from '@/hooks/useKeyboard
 import { exportAsMarkdown, exportAsHtml, exportAsPdf } from '@/lib/export';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -37,6 +38,7 @@ export default function Editor() {
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
+  const [syncScroll, setSyncScroll] = useState(true);
   const hasAutoCreated = useRef(false);
   
   const { theme, toggleTheme } = useTheme();
@@ -181,9 +183,12 @@ export default function Editor() {
                 />
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setWordWrap(!wordWrap)}>
-                {wordWrap ? '✓' : '  '} Word Wrap
-              </DropdownMenuItem>
+              <DropdownMenuCheckboxItem checked={wordWrap} onCheckedChange={setWordWrap}>
+                Word Wrap
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={syncScroll} onCheckedChange={setSyncScroll}>
+                Sync Scroll
+              </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -233,6 +238,7 @@ export default function Editor() {
             onCursorChange={(line, column) => setCursorPosition({ line, column })}
             fontSize={fontSize}
             wordWrap={wordWrap}
+            syncScroll={syncScroll}
           />
           
           <StatusBar
