@@ -10,6 +10,9 @@
     "check": "tsc",
     "lint:fix": "echo 'No linter configured'",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "metrics:build": "node scripts/measure-build.js",
     "metrics:monaco": "node scripts/analyze-monaco.js",
     "metrics:preview": "node scripts/measure-preview.js",
@@ -61,12 +64,14 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",
+    "@vitest/coverage-v8": "^4.1.12",
     "autoprefixer": "^10.4.20",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
-    "vite": "^7.0.2"
+    "vite": "^7.0.2",
+    "vitest": "^4.1.12"
   }
 }
