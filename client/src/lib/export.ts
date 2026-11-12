@@ -1,27 +1,50 @@
 import { saveAs } from 'file-saver';
+import { version as katexVersion } from 'katex';
 import { markdownToHtml } from './markdown';
+
+const FALLBACK_FILE_NAME = 'Untitled';
+// Reserved device names on Windows; a file called "con.md" cannot be created there.
+const RESERVED_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+
+/**
+ * Turn a document title into a file name that is valid on Windows, macOS and Linux.
+ */
+export function safeFileName(title: string): string {
+  const cleaned = title
+    // Path separators, characters Windows forbids, and control characters
+    .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, '-')
+    .replace(/\s+/g, ' ')
+    // Windows drops trailing dots and spaces; leading dots hide the file on Unix
+    .replace(/^[.\s-]+|[.\s-]+$/g, '')
+    .slice(0, 120)
+    .trim();
+
+  if (!cleaned || RESERVED_NAMES.test(cleaned)) return FALLBACK_FILE_NAME;
+  return cleaned;
+}
 
 /**
  * Export document as Markdown file
  */
 export function exportAsMarkdown(title: string, content: string) {
   const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-  saveAs(blob, `${title}.md`);
+  saveAs(blob, `${safeFileName(title)}.md`);
 }
 
 /**
- * Export document as self-contained HTML file
+ * Wrap rendered markdown in a standalone HTML page.
+ *
+ * Everything is inline except the KaTeX stylesheet and fonts, which are loaded
+ * from jsDelivr at the version of KaTeX that produced the markup.
  */
-export async function exportAsHtml(title: string, content: string) {
-  const html = await markdownToHtml(content);
-  
-  const fullHtml = `<!DOCTYPE html>
+export function buildHtmlDocument(title: string, html: string): string {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@${katexVersion}/dist/katex.min.css">
   <style>
     * {
       margin: 0;
@@ -138,6 +161,19 @@ export async function exportAsHtml(title: string, content: string) {
       margin: 2em 0;
     }
     
+    /* Syntax highlighting (Prism token classes) */
+    .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #6e7781; font-style: italic; }
+    .token.punctuation { color: #57606a; }
+    .token.property, .token.tag, .token.constant, .token.symbol, .token.deleted { color: #116329; }
+    .token.boolean, .token.number { color: #0550ae; }
+    .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #0a3069; }
+    .token.operator, .token.entity, .token.url { color: #57606a; }
+    .token.atrule, .token.attr-value, .token.keyword { color: #cf222e; }
+    .token.function, .token.class-name { color: #8250df; }
+    .token.regex, .token.important, .token.variable { color: #953800; }
+    .token.important, .token.bold { font-weight: bold; }
+    .token.italic { font-style: italic; }
+
     /* Task lists */
     input[type="checkbox"] {
       margin-right: 0.5em;
@@ -165,9 +201,15 @@ export async function exportAsHtml(title: string, content: string) {
   ${html}
 </body>
 </html>`;
+}
 
-  const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-  saveAs(blob, `${title}.html`);
+/**
+ * Export document as a standalone HTML file
+ */
+export async function exportAsHtml(title: string, content: string) {
+  const html = await markdownToHtml(content);
+  const blob = new Blob([buildHtmlDocument(title, html)], { type: 'text/html;charset=utf-8' });
+  saveAs(blob, `${safeFileName(title)}.html`);
 }
 
 /**
@@ -178,7 +220,9 @@ export function exportAsPdf() {
 }
 
 function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
