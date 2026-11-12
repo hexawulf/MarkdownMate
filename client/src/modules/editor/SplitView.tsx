@@ -1,8 +1,22 @@
+import { lazy, Suspense } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { EditorPane } from './EditorPane';
 import { PreviewPane } from './PreviewPane';
 import { Button } from '@/components/ui/button';
 import { Code, Eye, Columns } from 'lucide-react';
+
+// Monaco is by far the largest part of the app. Loading it as its own chunk
+// lets the page shell and the preview appear first; the download starts as soon
+// as this module is evaluated rather than when the editor is first rendered.
+const editorPaneModule = import('./EditorPane');
+const EditorPane = lazy(() => editorPaneModule.then((m) => ({ default: m.EditorPane })));
+
+function EditorFallback() {
+  return (
+    <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+      Loading editor…
+    </div>
+  );
+}
 
 export type ViewMode = 'editor' | 'preview' | 'split';
 
@@ -63,13 +77,15 @@ export function SplitView({
       {/* Content area */}
       <div className="flex-1 overflow-hidden">
         {viewMode === 'editor' && (
-          <EditorPane
-            value={content}
-            onChange={onChange}
-            onCursorChange={onCursorChange}
-            fontSize={fontSize}
-            wordWrap={wordWrap}
-          />
+          <Suspense fallback={<EditorFallback />}>
+            <EditorPane
+              value={content}
+              onChange={onChange}
+              onCursorChange={onCursorChange}
+              fontSize={fontSize}
+              wordWrap={wordWrap}
+            />
+          </Suspense>
         )}
 
         {viewMode === 'preview' && (
@@ -79,13 +95,15 @@ export function SplitView({
         {viewMode === 'split' && (
           <ResizablePanelGroup direction="horizontal" className="h-full">
             <ResizablePanel defaultSize={50} minSize={20}>
-              <EditorPane
-                value={content}
-                onChange={onChange}
-                onCursorChange={onCursorChange}
-                fontSize={fontSize}
-                wordWrap={wordWrap}
-              />
+              <Suspense fallback={<EditorFallback />}>
+                <EditorPane
+                  value={content}
+                  onChange={onChange}
+                  onCursorChange={onCursorChange}
+                  fontSize={fontSize}
+                  wordWrap={wordWrap}
+                />
+              </Suspense>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={50} minSize={20}>

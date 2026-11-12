@@ -1,5 +1,4 @@
 import { saveAs } from 'file-saver';
-import { version as katexVersion } from 'katex';
 import { markdownToHtml } from './markdown';
 
 const FALLBACK_FILE_NAME = 'Untitled';
@@ -37,7 +36,7 @@ export function exportAsMarkdown(title: string, content: string) {
  * Everything is inline except the KaTeX stylesheet and fonts, which are loaded
  * from jsDelivr at the version of KaTeX that produced the markup.
  */
-export function buildHtmlDocument(title: string, html: string): string {
+export function buildHtmlDocument(title: string, html: string, katexVersion: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -207,8 +206,13 @@ export function buildHtmlDocument(title: string, html: string): string {
  * Export document as a standalone HTML file
  */
 export async function exportAsHtml(title: string, content: string) {
-  const html = await markdownToHtml(content);
-  const blob = new Blob([buildHtmlDocument(title, html)], { type: 'text/html;charset=utf-8' });
+  // KaTeX is already loaded with the rendering pipeline; importing it here
+  // lazily keeps it out of the initial bundle.
+  const [html, { version: katexVersion }] = await Promise.all([
+    markdownToHtml(content),
+    import('katex'),
+  ]);
+  const blob = new Blob([buildHtmlDocument(title, html, katexVersion)], { type: 'text/html;charset=utf-8' });
   saveAs(blob, `${safeFileName(title)}.html`);
 }
 

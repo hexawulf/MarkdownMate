@@ -33,17 +33,17 @@ describe("safeFileName", () => {
 
 describe("buildHtmlDocument", () => {
   it("escapes the title", () => {
-    const doc = buildHtmlDocument('<script>alert("x")</script> & co', "<p>body</p>");
+    const doc = buildHtmlDocument('<script>alert("x")</script> & co', "<p>body</p>", katexVersion);
     expect(doc).toContain("<title>&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; co</title>");
   });
 
   it("links the KaTeX stylesheet of the installed KaTeX version", () => {
-    const doc = buildHtmlDocument("t", "");
+    const doc = buildHtmlDocument("t", "", katexVersion);
     expect(doc).toContain(`https://cdn.jsdelivr.net/npm/katex@${katexVersion}/dist/katex.min.css`);
   });
 
   it("includes the body and token colours for highlighted code", () => {
-    const doc = buildHtmlDocument("t", '<pre><code><span class="token keyword">const</span></code></pre>');
+    const doc = buildHtmlDocument("t", '<pre><code><span class="token keyword">const</span></code></pre>', katexVersion);
     expect(doc).toContain('<span class="token keyword">const</span>');
     expect(doc).toContain(".token.keyword");
   });

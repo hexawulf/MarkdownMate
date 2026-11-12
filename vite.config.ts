@@ -27,6 +27,9 @@ export default defineConfig({
     sourcemap: false,
     minify: true,
     target: "es2020",
+    // The Monaco chunk is ~3.3 MB by nature; it is loaded lazily, so only warn
+    // if something else grows past it.
+    chunkSizeWarningLimit: 3500,
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true,
@@ -38,7 +41,6 @@ export default defineConfig({
         warn(warning);
       },
       output: {
-        manualChunks: undefined,
         format: "es",
         entryFileNames: "assets/[name]-[hash].js",
         chunkFileNames: "assets/[name]-[hash].js",
