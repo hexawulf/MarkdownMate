@@ -5,6 +5,33 @@ All notable changes to MarkdownMate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-11-12
+
+### Refactoring audit: fixes, smaller bundle, tests and CI
+
+### 🐛 Fixed
+- **Math and code highlighting**: `rehype-sanitize` ran after KaTeX and Prism and stripped their output; it now runs before them
+- **Autosave**: tracked per document. Opening a document no longer re-saves it, and switching documents inside the debounce window no longer drops the pending edit. Pending edits are flushed on tab hide and unmount
+- **Keyboard shortcuts**: removed four shortcuts (Ctrl+B / I / K / Shift+P) that only swallowed the key press
+- **Export**: file names are sanitized; HTML export links the KaTeX CSS of the installed version and includes token colours
+- **Server**: `PORT` is honoured (default 5004); unknown paths return 404 instead of 200
+
+### ⚡ Performance
+- Entry chunk 4,779 kB → 375 kB (1,336 kB → 121 kB gzip); Monaco and the markdown pipeline load as separate chunks
+- Preview rendering is debounced (150 ms)
+- Hashed assets are served with `max-age=31536000, immutable`
+
+### 🔒 Security
+- The client builds into `dist/public` and only that directory is served; the server bundle and source maps are no longer downloadable
+- `npm audit fix` without majors, Express 4.22.3: 20 findings (1 critical, 7 high) → 6 (none critical or high)
+
+### 🔧 Changed
+- Vite is imported only in development; dead code removed
+- Added Vitest (44 tests), ESLint and a CI workflow
+- `npm run build` removes `dist/` first
+
+---
+
 ## [3.0.0] - 2026-03-15
 
 ### Visual & UX Overhaul

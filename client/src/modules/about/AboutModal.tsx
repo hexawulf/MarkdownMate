@@ -13,7 +13,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.1.0';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
   const openLink = (url: string) => {

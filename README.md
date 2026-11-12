@@ -3,7 +3,7 @@
 **A fast, local-first markdown editor with live preview, autosave, and GitHub-flavored markdown support.**
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-3.0.0-blue" alt="v3.0.0" />
+  <img src="https://img.shields.io/badge/version-3.1.0-blue" alt="v3.1.0" />
   <img src="https://img.shields.io/badge/React-18-blue?logo=react" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Vite-7-purple?logo=vite" alt="Vite" />
@@ -260,6 +260,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **3.1.0** | 2026-11-12 | Math and code highlighting fixed, per-document autosave, 375 kB entry bundle, server bundle and source maps no longer public, tests + CI |
 | **3.0.0** | 2026-03-15 | GitHub-minimal theme, startup race condition fix, Monaco bundle optimization, codebase hardening |
 | **2.0.0** | 2025-11-02 | Local-first rewrite — IndexedDB storage, Monaco editor, split view, autosave, export |
 | **1.0.0** | 2024-12-06 | Initial release — collaborative editing with Firebase |
