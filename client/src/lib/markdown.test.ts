@@ -59,6 +59,36 @@ describe("markdownToHtml", () => {
     expect(html).not.toContain("onerror");
   });
 
+  it("renders inline math with KaTeX markup", async () => {
+    const html = await markdownToHtml("Euler: $e^{i\\pi} + 1 = 0$");
+    expect(html).toContain('class="katex"');
+    expect(html).toContain("<math");
+    expect(html).not.toContain("katex-display");
+  });
+
+  it("renders display math as a KaTeX display block", async () => {
+    const html = await markdownToHtml("$$\n\\int_0^1 x\\,dx\n$$");
+    expect(html).toContain('class="katex-display"');
+  });
+
+  it("adds Prism token classes to fenced code", async () => {
+    const html = await markdownToHtml("```js\nconst answer = 42;\n```");
+    expect(html).toContain('class="language-js"');
+    expect(html).toContain('class="token keyword"');
+    expect(html).toContain('class="token number"');
+  });
+
+  it("leaves fenced code in an unknown language readable", async () => {
+    const html = await markdownToHtml("```not-a-language\nhello <b>\n```");
+    expect(html).toContain("hello &#x3C;b>");
+  });
+
+  it("does not let user HTML carry style attributes into the output", async () => {
+    const html = await markdownToHtml('a <span style="position:fixed" class="katex">x</span> b');
+    expect(html).not.toContain("style=");
+    expect(html).not.toContain("katex");
+  });
+
   it("drops javascript: links", async () => {
     const html = await markdownToHtml("[click](javascript:alert(1))");
     expect(html).not.toContain("javascript:");
