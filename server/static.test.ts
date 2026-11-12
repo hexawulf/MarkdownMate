@@ -92,6 +92,22 @@ describe("production static server", () => {
     expect(post.status).toBe(404);
   });
 
+  it("lets browsers cache hashed assets forever and never caches the shell", async () => {
+    const asset = await fetch(`${baseUrl}/assets/index-abc123.js`);
+    expect(asset.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+
+    for (const route of ["/", "/editor", "/nonexistent-page", "/index.html"]) {
+      const res = await fetch(`${baseUrl}${route}`);
+      expect(res.headers.get("cache-control"), route).toBe("no-cache");
+    }
+
+    const robots = await fetch(`${baseUrl}/robots.txt`);
+    expect(robots.headers.get("cache-control")).toBe("public, max-age=3600");
+
+    const missing = await fetch(`${baseUrl}/assets/index-oldhash.js`);
+    expect(missing.headers.get("cache-control")).toBeNull();
+  });
+
   it("sends the security headers and hides the framework", async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.headers.get("content-security-policy")).toContain("default-src 'self'");
