@@ -12,7 +12,7 @@
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 
 self.MonacoEnvironment = {
-  getWorker(_: string, label: string) {
+  getWorker(_workerId: string, _label: string) {
     // All languages fall back to the basic editor worker
     // This provides text editing, but not advanced language features
     // (IntelliSense, type checking, etc.) which aren't needed for markdown

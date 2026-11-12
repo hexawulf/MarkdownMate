@@ -40,7 +40,7 @@ function resolvePort(): number {
   const port = resolvePort();
   const server = app.listen(port);
 
-  server.on('error', (err: any) => {
+  server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       logger.error(`Port ${port} is already in use.`, err);
     } else {

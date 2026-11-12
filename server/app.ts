@@ -60,12 +60,14 @@ export function createApp({ onApiRequest }: CreateAppOptions = {}): Express {
   return app;
 }
 
+type HttpError = Error & { status?: number; statusCode?: number };
+
 /** Must be registered after all routes and middleware. */
 export function attachErrorHandler(
   app: Express,
   onError?: (status: number, message: string, err: unknown) => void,
 ) {
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: HttpError, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 

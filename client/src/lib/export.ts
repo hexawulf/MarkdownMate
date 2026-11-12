@@ -11,6 +11,7 @@ const RESERVED_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 export function safeFileName(title: string): string {
   const cleaned = title
     // Path separators, characters Windows forbids, and control characters
+    // eslint-disable-next-line no-control-regex
     .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, '-')
     .replace(/\s+/g, ' ')
     // Windows drops trailing dots and spaces; leading dots hide the file on Unix
