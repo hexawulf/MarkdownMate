@@ -41,6 +41,13 @@ export default function Editor() {
   
   const { theme, toggleTheme } = useTheme();
 
+  const handleSelectDocument = useCallback((doc: Document) => {
+    setCurrentDocument(doc);
+    setContent(doc.content);
+    setLastSaved(doc.updatedAt);
+    setHasUnsavedChanges(false);
+  }, [setCurrentDocument]);
+
   // Load documents on mount
   useEffect(() => {
     loadDocuments();
@@ -51,9 +58,11 @@ export default function Editor() {
     if (!hasLoadedInitialDocuments || hasAutoCreated.current) return;
     if (documents.length === 0 && !currentDocument) {
       hasAutoCreated.current = true;
-      createDocument('Untitled Document', '# Welcome to MarkdownMate\n\nStart writing...');
+      createDocument('Untitled Document', '# Welcome to MarkdownMate\n\nStart writing...')
+        .then(handleSelectDocument)
+        .catch((error) => console.error('Failed to create the first document:', error));
     }
-  }, [hasLoadedInitialDocuments, documents, currentDocument, createDocument]);
+  }, [hasLoadedInitialDocuments, documents, currentDocument, createDocument, handleSelectDocument]);
 
   // Set initial document after load
   useEffect(() => {
@@ -74,19 +83,13 @@ export default function Editor() {
   // Autosave
   const { saveNow } = useAutosave({
     documentId: currentDocument?.id || null,
+    storedContent: currentDocument?.content ?? '',
     content,
     onSave: () => {
       setLastSaved(Date.now());
       setHasUnsavedChanges(false);
     },
   });
-
-  const handleSelectDocument = useCallback((doc: Document) => {
-    setCurrentDocument(doc);
-    setContent(doc.content);
-    setLastSaved(doc.updatedAt);
-    setHasUnsavedChanges(false);
-  }, [setCurrentDocument]);
 
   const handleCreateDocument = useCallback(async () => {
     const newDoc = await createDocument('Untitled Document');

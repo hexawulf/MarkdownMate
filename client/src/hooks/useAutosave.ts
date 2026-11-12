@@ -1,65 +1,74 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { createAutosaver, type Autosaver } from '@/lib/autosave';
 import { useDocumentsStore } from '@/stores/useDocumentsStore';
 
 interface UseAutosaveOptions {
+  /** The document being edited, or null while none is open. */
   documentId: string | null;
+  /** The content of that document as it is currently stored. */
+  storedContent: string;
+  /** The content currently in the editor. */
   content: string;
   debounceMs?: number;
+  /** Called after a successful write of the document that is still open. */
   onSave?: () => void;
 }
 
 export function useAutosave({
   documentId,
+  storedContent,
   content,
   debounceMs = 500,
   onSave,
 }: UseAutosaveOptions) {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousContentRef = useRef<string>(content);
-  const onSaveRef = useRef(onSave);
-  onSaveRef.current = onSave;
-  const { updateDocument } = useDocumentsStore();
+  const updateDocument = useDocumentsStore((state) => state.updateDocument);
 
-  const save = useCallback(async () => {
-    if (!documentId) return;
-    
-    try {
-      await updateDocument(documentId, { content });
-      onSaveRef.current?.();
-      previousContentRef.current = content;
-    } catch (error) {
-      console.error('Failed to autosave:', error);
-    }
-  }, [documentId, content, updateDocument]);
+  // Latest values for the callbacks the long-lived autosaver holds on to.
+  const latest = useRef({ documentId, onSave, updateDocument });
+  latest.current = { documentId, onSave, updateDocument };
+
+  const autosaverRef = useRef<Autosaver | null>(null);
+  if (autosaverRef.current === null) {
+    autosaverRef.current = createAutosaver({
+      debounceMs,
+      save: (id, text) => latest.current.updateDocument(id, { content: text }),
+      onSaved: (id) => {
+        if (id === latest.current.documentId) latest.current.onSave?.();
+      },
+      onError: (error) => {
+        console.error('Failed to autosave:', error);
+      },
+    });
+  }
+  const autosaver = autosaverRef.current;
 
   useEffect(() => {
-    // Don't autosave if content hasn't changed
-    if (content === previousContentRef.current) return;
-    
-    // Clear existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    autosaver.open(documentId, storedContent);
+    autosaver.change(content);
+    // `storedContent` only matters at the moment a document is opened; later
+    // updates of it are the autosaver's own writes coming back from the store.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autosaver, documentId, content]);
 
-    // Set new timeout
-    timeoutRef.current = setTimeout(() => {
-      save();
-    }, debounceMs);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+  // Write the pending edit when the tab is hidden or closed, and on unmount.
+  useEffect(() => {
+    const flushWhenHidden = () => {
+      if (document.visibilityState === 'hidden') void autosaver.flush();
     };
-  }, [content, save, debounceMs]);
+    const flushNow = () => {
+      void autosaver.flush();
+    };
 
-  // Manual save function
-  const saveNow = useCallback(async () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    await save();
-  }, [save]);
+    document.addEventListener('visibilitychange', flushWhenHidden);
+    window.addEventListener('pagehide', flushNow);
+    return () => {
+      document.removeEventListener('visibilitychange', flushWhenHidden);
+      window.removeEventListener('pagehide', flushNow);
+      void autosaver.flush();
+    };
+  }, [autosaver]);
+
+  const saveNow = useCallback(() => autosaver.flush(), [autosaver]);
 
   return { saveNow };
 }
