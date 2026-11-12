@@ -1,76 +1,63 @@
 import 'dotenv/config';
-import express, { type Request, Response, NextFunction } from "express";
-import helmet from 'helmet';
 import path from "path";
 import { fileURLToPath } from "url";
-import { serveStatic, log } from "./static";
+import { attachErrorHandler, createApp } from "./app";
+import { serveStatic } from "./static";
 import logger from './src/logger';
+
+const DEFAULT_PORT = 5004;
 
 // server/ in development, dist/ in the production bundle: the parent is the project root either way.
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicDir = path.resolve(projectRoot, "dist", "public");
 
-const app = express();
-
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
-
-// Security headers with helmet - strict local-only CSP
-app.use(helmet({
-  contentSecurityPolicy: {
-    useDefaults: true,
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],                    // no remote scripts, no eval
-      styleSrc: ["'self'", "'unsafe-inline'"],  // allow inline for Monaco/print CSS
-      imgSrc: ["'self'", "data:", "blob:"],     // allow data URLs for images
-      fontSrc: ["'self'", "data:"],             // allow data URLs for fonts
-      connectSrc: ["'self'"],                   // no external connections
-      workerSrc: ["'self'", "blob:"],           // Monaco workers
-      childSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      frameAncestors: ["'none'"]
-    }
-  },
-  crossOriginEmbedderPolicy: false,  // Monaco compatibility
-  crossOriginResourcePolicy: { policy: "same-origin" }
-}));
-
-// Request logging middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-      log(logLine);
-    }
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
   });
 
-  next();
-});
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
 
-// Health check endpoint
-app.get('/api/health', (_req: Request, res: Response) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    service: 'MarkdownMate'
-  });
-});
+function resolvePort(): number {
+  const raw = process.env.PORT;
+  if (!raw) return DEFAULT_PORT;
+
+  const port = Number(raw);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    logger.warn(`Ignoring invalid PORT "${raw}", using ${DEFAULT_PORT}`);
+    return DEFAULT_PORT;
+  }
+  return port;
+}
 
 (async () => {
-  const port = 5004;
+  const app = createApp({ onApiRequest: log });
+  const isDevelopment = app.get("env") === "development";
+  const port = resolvePort();
   const server = app.listen(port);
-  
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`Port ${port} is already in use.`, err);
+    } else {
+      logger.error('Server error:', err);
+    }
+    process.exit(1);
+  });
+
+  server.on('listening', () => {
+    log(`serving on port ${port}`);
+    logger.info(`Server started on port ${port}`);
+    logger.info(`Environment: ${app.get("env") || 'development'}`);
+    logger.info(`Serving: ${isDevelopment ? 'Vite dev server' : `Static files from ${publicDir}`}`);
+  });
+
   // Setup static/vite based on environment
-  if (app.get("env") === "development") {
+  if (isDevelopment) {
     // Loaded on demand so the production bundle never imports Vite.
     const { setupVite } = await import("./vite");
     await setupVite(app, server, projectRoot);
@@ -80,45 +67,19 @@ app.get('/api/health', (_req: Request, res: Response) => {
   }
 
   // Error handler must be registered AFTER all routes/middleware
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    
+  attachErrorHandler(app, (status, message, err) => {
     logger.error(`Server Error ${status}: ${message}`, err);
-    res.status(status).json({ message });
   });
 
   // Graceful shutdown handlers
-  process.on('SIGTERM', () => {
-    logger.info('SIGTERM received, shutting down gracefully');
+  const shutdown = (signal: string) => {
+    logger.info(`${signal} received, shutting down gracefully`);
     server.close(() => {
       logger.info('Server closed.');
       process.exit(0);
     });
-  });
+  };
 
-  process.on('SIGINT', () => {
-    logger.info('SIGINT received, shutting down gracefully');
-    server.close(() => {
-      logger.info('Server closed.');
-      process.exit(0);
-    });
-  });
-
-  server.on('error', (err: any) => {
-    if (err.code === 'EADDRINUSE') {
-      logger.error(`Port ${port} is already in use.`, err);
-      process.exit(1);
-    } else {
-      logger.error('Server error:', err);
-      process.exit(1);
-    }
-  });
-
-  server.on('listening', () => {
-    log(`serving on port ${port}`);
-    logger.info(`Server started on port ${port}`);
-    logger.info(`Environment: ${app.get("env") || 'development'}`);
-    logger.info(`Serving: ${app.get("env") === "development" ? 'Vite dev server' : 'Static files from /dist'}`);
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 })();
