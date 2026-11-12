@@ -118,10 +118,6 @@ export default function Editor() {
     onSave: saveNow,
     onExport: handleExportMarkdown,
     onHelp: () => setHelpDialogOpen(true),
-    onBold: () => console.log('Bold formatting'),
-    onItalic: () => console.log('Italic formatting'),
-    onCode: () => console.log('Code formatting'),
-    onCommandPalette: () => console.log('Command palette'),
   });
 
   useKeyboardShortcuts({ shortcuts });

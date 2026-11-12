@@ -46,10 +46,6 @@ export const createEditorShortcuts = (actions: {
   onSave: () => void;
   onExport: () => void;
   onHelp: () => void;
-  onBold: () => void;
-  onItalic: () => void;
-  onCode: () => void;
-  onCommandPalette: () => void;
 }): KeyboardShortcut[] => [
   {
     key: 's',
@@ -68,31 +64,6 @@ export const createEditorShortcuts = (actions: {
     ctrlOrCmd: true,
     action: actions.onHelp,
     description: 'Show help',
-  },
-  {
-    key: 'b',
-    ctrlOrCmd: true,
-    action: actions.onBold,
-    description: 'Bold text',
-  },
-  {
-    key: 'i',
-    ctrlOrCmd: true,
-    action: actions.onItalic,
-    description: 'Italic text',
-  },
-  {
-    key: 'k',
-    ctrlOrCmd: true,
-    action: actions.onCode,
-    description: 'Inline code',
-  },
-  {
-    key: 'p',
-    ctrlOrCmd: true,
-    shift: true,
-    action: actions.onCommandPalette,
-    description: 'Command palette',
   },
 ];
 
