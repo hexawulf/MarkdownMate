@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { EditorPane } from './EditorPane';
 import { PreviewPane } from './PreviewPane';
@@ -15,7 +14,6 @@ interface SplitViewProps {
   onCursorChange?: (line: number, column: number) => void;
   fontSize?: number;
   wordWrap?: boolean;
-  vimMode?: boolean;
 }
 
 export function SplitView({
@@ -26,7 +24,6 @@ export function SplitView({
   onCursorChange,
   fontSize = 14,
   wordWrap = true,
-  vimMode = false,
 }: SplitViewProps) {
   return (
     <div className="flex flex-col h-full">
@@ -72,7 +69,6 @@ export function SplitView({
             onCursorChange={onCursorChange}
             fontSize={fontSize}
             wordWrap={wordWrap}
-            vimMode={vimMode}
           />
         )}
 
@@ -89,7 +85,6 @@ export function SplitView({
                 onCursorChange={onCursorChange}
                 fontSize={fontSize}
                 wordWrap={wordWrap}
-                vimMode={vimMode}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />

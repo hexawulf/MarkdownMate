@@ -81,23 +81,3 @@ export function countMarkdown(markdown: string): { words: number; characters: nu
   
   return { words, characters, charactersNoSpaces };
 }
-
-/**
- * Extract headings from markdown for TOC
- */
-export function extractHeadings(markdown: string): Array<{ level: number; text: string; id: string }> {
-  const headings: Array<{ level: number; text: string; id: string }> = [];
-  const lines = markdown.split('\n');
-  
-  for (const line of lines) {
-    const match = line.match(/^(#{1,6})\s+(.+)$/);
-    if (match) {
-      const level = match[1].length;
-      const text = match[2].trim();
-      const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-      headings.push({ level, text, id });
-    }
-  }
-  
-  return headings;
-}

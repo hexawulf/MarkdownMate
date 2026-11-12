@@ -1,21 +1,15 @@
 import { Editor, loader } from '@monaco-editor/react';
 import { useTheme } from '@/hooks/useTheme';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import type { editor } from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 
 // Import worker configuration (must be before Monaco initialization)
 import '../../monaco-workers';
 
-// Import Monaco configuration for language optimization
-import { configureMonaco } from '@/lib/monacoConfig';
-
 // Configure loader to use bundled Monaco instead of CDN
 // Setting paths to false disables AMD loader completely
 loader.config({ monaco, paths: { vs: '' } });
-
-// Configure Monaco with essential languages only (reduces bundle size)
-configureMonaco(monaco);
 
 // GitHub-style Monaco themes
 monaco.editor.defineTheme('github-light', {
@@ -122,7 +116,6 @@ interface EditorPaneProps {
   onCursorChange?: (line: number, column: number) => void;
   fontSize?: number;
   wordWrap?: boolean;
-  vimMode?: boolean;
 }
 
 export function EditorPane({ 
@@ -131,7 +124,6 @@ export function EditorPane({
   onCursorChange,
   fontSize = 14,
   wordWrap = true,
-  vimMode = false 
 }: EditorPaneProps) {
   const { theme } = useTheme();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -150,15 +142,6 @@ export function EditorPane({
   const handleEditorChange = (value: string | undefined) => {
     onChange(value || '');
   };
-
-  // Apply vim mode if enabled (basic implementation)
-  useEffect(() => {
-    if (vimMode && editorRef.current) {
-      // Monaco doesn't have built-in Vim mode
-      // This would require monaco-vim extension
-      console.log('Vim mode requested but not yet implemented');
-    }
-  }, [vimMode]);
 
   return (
     <div className="h-full w-full">
