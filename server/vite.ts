@@ -57,11 +57,11 @@ export async function setupVite(app: Express, server: Server) {
       allowedHosts: true,
     },
     build: {
-      sourcemap: true,
+      sourcemap: false,
       minify: true,
       target: "es2020",
       emptyOutDir: true,
-      outDir: path.resolve(projectRoot, "dist"),
+      outDir: path.resolve(projectRoot, "dist", "public"),
       rollupOptions: {
         output: {
           format: "es",
@@ -109,7 +109,8 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(projectRoot, "dist");
+  // Client build only; the server bundle lives one level up in dist/ and must not be served.
+  const distPath = path.resolve(projectRoot, "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(`Could not find the build directory: ${distPath}, make sure to build the client first`);

@@ -24,9 +24,9 @@ export default defineConfig({
   },
   root: path.resolve(path.dirname(new URL(import.meta.url).pathname), "client"),
   build: {
-    outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "dist"),
+    outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "dist", "public"),
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: false,
     minify: true,
     target: "es2020",
     commonjsOptions: {
