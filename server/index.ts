@@ -1,8 +1,14 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from 'helmet';
-import { setupVite, serveStatic, log } from "./vite";
+import path from "path";
+import { fileURLToPath } from "url";
+import { serveStatic, log } from "./static";
 import logger from './src/logger';
+
+// server/ in development, dist/ in the production bundle: the parent is the project root either way.
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const publicDir = path.resolve(projectRoot, "dist", "public");
 
 const app = express();
 
@@ -65,10 +71,12 @@ app.get('/api/health', (_req: Request, res: Response) => {
   
   // Setup static/vite based on environment
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    // Loaded on demand so the production bundle never imports Vite.
+    const { setupVite } = await import("./vite");
+    await setupVite(app, server, projectRoot);
   } else {
     logger.info('Running in PRODUCTION mode - serving static files');
-    serveStatic(app);
+    serveStatic(app, publicDir);
   }
 
   // Error handler must be registered AFTER all routes/middleware
