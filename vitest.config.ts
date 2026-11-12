@@ -12,7 +12,7 @@ export default defineConfig({
     include: ["client/src/**/*.test.ts", "server/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      include: ["client/src/lib/**", "client/src/hooks/**", "server/**"],
+      include: ["client/src/lib/**/*.ts", "client/src/hooks/**/*.ts", "server/**/*.ts"],
       exclude: ["**/*.test.ts"],
     },
   },
