@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDocumentsStore, type Document } from '@/stores/useDocumentsStore';
+import { BROADCAST_NAME, type DocBroadcast } from '@/stores/useDocumentsStore';
 import { DocumentsSidebar } from '@/components/DocumentsSidebar';
 import { SplitView, type ViewMode } from '@/modules/editor/SplitView';
 import { StatusBar } from '@/modules/editor/StatusBar';
@@ -27,7 +28,7 @@ import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
 import { AboutModal } from '@/modules/about';
 
 export default function Editor() {
-  const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument, hasLoadedInitialDocuments } = useDocumentsStore();
+  const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument, hasLoadedInitialDocuments, getDocument } = useDocumentsStore();
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
@@ -37,6 +38,9 @@ export default function Editor() {
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
+  // MM-02: set when another tab changed the open document while this tab has an
+  // unsaved edit. Autosave is paused until the user chooses.
+  const [externalChange, setExternalChange] = useState(false);
   
   const { theme, toggleTheme } = useTheme();
 
@@ -92,11 +96,12 @@ export default function Editor() {
     }
   }, [content, currentDocument]);
 
-  // Autosave
-  const { saveNow } = useAutosave({
+  // Autosave. Paused while an external change is pending the user's decision.
+  const { saveNow, hasPending } = useAutosave({
     documentId: currentDocument?.id || null,
     storedContent: currentDocument?.content ?? '',
-    content,
+    content: externalChange ? (currentDocument?.content ?? '') : content,
+    paused: externalChange,
     onSave: () => {
       setLastSaved(Date.now());
       setHasUnsavedChanges(false);
@@ -107,6 +112,57 @@ export default function Editor() {
     const newDoc = await createDocument('Untitled Document');
     handleSelectDocument(newDoc);
   }, [createDocument, handleSelectDocument]);
+
+  // MM-02: react to writes from other tabs on the document open here.
+  //  - no pending edit  -> silently reload the newer content;
+  //  - pending edit     -> show the "changed in another tab" banner and pause
+  //                        autosave until the user picks Reload or Keep mine.
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const ch = new BroadcastChannel(BROADCAST_NAME);
+    const onMessage = async (event: MessageEvent<DocBroadcast>) => {
+      const msg = event.data;
+      const openId = currentDocument?.id;
+      if (!openId || !msg || msg.id !== openId) return;
+      if (msg.type === 'deleted') return; // handled by the empty-state flow
+      if (msg.updatedAt <= (currentDocument?.updatedAt ?? 0)) return;
+
+      if (hasPending()) {
+        setExternalChange(true);
+        return;
+      }
+      // No local edit pending: adopt the other tab's version.
+      const fresh = await getDocument(openId);
+      if (fresh) {
+        setCurrentDocument(fresh);
+        setContent(fresh.content);
+        setLastSaved(fresh.updatedAt);
+        setHasUnsavedChanges(false);
+      }
+    };
+    ch.addEventListener('message', onMessage);
+    return () => {
+      ch.removeEventListener('message', onMessage);
+      ch.close();
+    };
+  }, [currentDocument, getDocument, hasPending, setCurrentDocument]);
+
+  const handleReloadExternal = useCallback(async () => {
+    if (!currentDocument) return;
+    const fresh = await getDocument(currentDocument.id);
+    if (fresh) {
+      setCurrentDocument(fresh);
+      setContent(fresh.content);
+      setLastSaved(fresh.updatedAt);
+      setHasUnsavedChanges(false);
+    }
+    setExternalChange(false);
+  }, [currentDocument, getDocument, setCurrentDocument]);
+
+  const handleKeepMine = useCallback(() => {
+    // Resume autosave; the next change writes this tab's content over the other.
+    setExternalChange(false);
+  }, []);
 
   const handleContentChange = useCallback((newContent: string) => {
     setContent(newContent);
@@ -251,6 +307,19 @@ export default function Editor() {
         </div>
         
         <div className="flex-1 flex flex-col">
+          {externalChange && (
+            <div className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100 text-sm">
+              <span>Changed in another tab.</span>
+              <span className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={handleReloadExternal}>
+                  Reload
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handleKeepMine}>
+                  Keep mine
+                </Button>
+              </span>
+            </div>
+          )}
           <SplitView
             content={content}
             onChange={handleContentChange}

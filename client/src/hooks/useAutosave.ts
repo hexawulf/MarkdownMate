@@ -10,6 +10,8 @@ interface UseAutosaveOptions {
   /** The content currently in the editor. */
   content: string;
   debounceMs?: number;
+  /** When true, pending writes are suspended (e.g. an unresolved external change). */
+  paused?: boolean;
   /** Called after a successful write of the document that is still open. */
   onSave?: () => void;
 }
@@ -19,6 +21,7 @@ export function useAutosave({
   storedContent,
   content,
   debounceMs = 500,
+  paused = false,
   onSave,
 }: UseAutosaveOptions) {
   const updateDocument = useDocumentsStore((state) => state.updateDocument);
@@ -44,11 +47,11 @@ export function useAutosave({
 
   useEffect(() => {
     autosaver.open(documentId, storedContent);
-    autosaver.change(content);
+    if (!paused) autosaver.change(content);
     // `storedContent` only matters at the moment a document is opened; later
     // updates of it are the autosaver's own writes coming back from the store.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autosaver, documentId, content]);
+  }, [autosaver, documentId, content, paused]);
 
   // Write the pending edit when the tab is hidden or closed, and on unmount.
   useEffect(() => {
@@ -69,6 +72,7 @@ export function useAutosave({
   }, [autosaver]);
 
   const saveNow = useCallback(() => autosaver.flush(), [autosaver]);
+  const hasPending = useCallback(() => autosaver.hasPending(), [autosaver]);
 
-  return { saveNow };
+  return { saveNow, hasPending };
 }
