@@ -16,6 +16,7 @@ interface AboutModalProps {
 }
 
 const APP_VERSION = '3.2.0';
+const RELEASE_DATE = 'November 2026';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
   const [persisted, setPersisted] = useState<boolean | null>(null);
@@ -37,6 +38,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
             A fast, single-user, local-first online Markdown editor with real-time preview.
+            <span className="block text-xs pt-1">Released: {RELEASE_DATE}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -63,6 +65,18 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
               . Use <em>Export all</em> from the Export menu to download a <code>.zip</code> backup,
               and <em>Import</em> to restore it in any browser.
             </p>
+          </section>
+
+          {/* What's new */}
+          <section>
+            <h3 className="font-semibold mb-2">What&apos;s new in 3.2.0</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• <strong>Trash</strong> — deleted documents can be restored for 30 days</li>
+              <li>• <strong>Export all / Import</strong> — back up every document as a .zip</li>
+              <li>• <strong>Two tabs stay in sync</strong> — with a warning if both have edits</li>
+              <li>• <strong>Undo survives</strong> switching between Editor, Split and Preview</li>
+              <li>• <strong>Remote images</strong> (https) now show in the preview</li>
+            </ul>
           </section>
 
           {/* Links */}
