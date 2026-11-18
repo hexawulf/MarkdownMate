@@ -42,6 +42,11 @@ const getDB = async () => {
   return dbPromise;
 };
 
+// Test-only: drop the memoized connection so a fresh fake-indexeddb is used.
+export const __resetDbForTests = () => {
+  dbPromise = null;
+};
+
 interface DocumentsState {
   documents: Document[];
   currentDocument: Document | null;
