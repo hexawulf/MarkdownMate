@@ -15,7 +15,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const APP_VERSION = '3.2.0';
+const APP_VERSION = '3.2.1';
 const RELEASE_DATE = 'November 2026';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {

@@ -29,7 +29,7 @@ import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
 import { AboutModal } from '@/modules/about';
 
 export default function Editor() {
-  const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument, hasLoadedInitialDocuments, getDocument } = useDocumentsStore();
+  const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument, hasLoadedInitialDocuments, getDocument, dbBlocked } = useDocumentsStore();
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
@@ -240,7 +240,17 @@ export default function Editor() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-muted-foreground">Loading...</p>
+          {dbBlocked ? (
+            <div className="max-w-md space-y-2 px-4">
+              <p className="font-medium">MarkdownMate was updated.</p>
+              <p className="text-muted-foreground text-sm">
+                Close every other MarkdownMate tab or window to finish the update. This page
+                continues by itself. Your documents are safe.
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Loading...</p>
+          )}
         </div>
       </div>
     );
