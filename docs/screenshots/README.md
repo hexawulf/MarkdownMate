@@ -5,7 +5,6 @@ Images used by the main [README](../../README.md).
 | File                   | Shows                                                                 |
 | ---------------------- | --------------------------------------------------------------------- |
 | `editor-interface.png` | Split view (v3.2.0): sidebar, Monaco editor, rendered preview         |
-| `landing-page.png`     | Legacy: the v1 collaborative landing page. Not used by the README.    |
 
 ## Retaking `editor-interface.png`
 
