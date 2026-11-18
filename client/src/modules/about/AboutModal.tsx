@@ -40,7 +40,8 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
             <p className="text-sm text-muted-foreground leading-relaxed">
               MarkdownMate is designed for personal note-taking and writing without the complexity 
               of collaboration features. All documents are stored locally in your browser using IndexedDB. 
-              No external CDNs, no analytics, no tracking.
+              No analytics and no tracking. Remote images referenced in your Markdown
+              (<code>![](https://…)</code>) load from their own hosts over HTTPS.
             </p>
           </section>
 
@@ -115,7 +116,8 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
             <h3 className="font-semibold mb-2">Hosting & Privacy</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Self-hosted on Raspberry Pi (piapps). All document processing happens locally in your browser. 
-              No analytics, no external API calls, no data collection.
+              No analytics and no data collection. The only outbound requests are remote images
+              you reference in your Markdown, which load over HTTPS from their hosts.
             </p>
           </section>
 

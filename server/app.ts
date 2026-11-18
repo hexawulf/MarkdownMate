@@ -24,7 +24,7 @@ export function createApp({ onApiRequest }: CreateAppOptions = {}): Express {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],                    // no remote scripts, no eval
         styleSrc: ["'self'", "'unsafe-inline'"],  // allow inline for Monaco/print CSS
-        imgSrc: ["'self'", "data:", "blob:"],     // allow data URLs for images
+        imgSrc: ["'self'", "data:", "blob:", "https:"], // MM-03: allow remote images over https (http stays blocked)
         fontSrc: ["'self'", "data:"],             // allow data URLs for fonts
         connectSrc: ["'self'"],                   // no external connections
         workerSrc: ["'self'", "blob:"],           // Monaco workers
