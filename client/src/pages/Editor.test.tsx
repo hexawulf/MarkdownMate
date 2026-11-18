@@ -33,6 +33,7 @@ async function reset() {
   __resetDbForTests();
   useDocumentsStore.setState({
     documents: [],
+    trash: [],
     currentDocument: null,
     isLoading: false,
     hasLoadedInitialDocuments: false,

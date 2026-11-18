@@ -11,6 +11,7 @@ async function resetDbAndStore() {
   __resetDbForTests();
   useDocumentsStore.setState({
     documents: [],
+    trash: [],
     currentDocument: null,
     isLoading: false,
     hasLoadedInitialDocuments: false,
