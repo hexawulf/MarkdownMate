@@ -37,7 +37,6 @@ export default function Editor() {
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
-  const hasAutoCreated = useRef(false);
   
   const { theme, toggleTheme } = useTheme();
 
@@ -53,15 +52,25 @@ export default function Editor() {
     loadDocuments();
   }, [loadDocuments]);
 
-  // Auto-create first document only after initial IndexedDB load completes
+  // Auto-create a document whenever the list is empty after the initial load
+  // (first visit, or the user deleted the last document). A ref guards against
+  // firing twice while a creation is in flight, but it is cleared once a
+  // document exists again so a later empty state still recovers (MM-01).
+  const autoCreating = useRef(false);
   useEffect(() => {
-    if (!hasLoadedInitialDocuments || hasAutoCreated.current) return;
-    if (documents.length === 0 && !currentDocument) {
-      hasAutoCreated.current = true;
-      createDocument('Untitled Document', '# Welcome to MarkdownMate\n\nStart writing...')
-        .then(handleSelectDocument)
-        .catch((error) => console.error('Failed to create the first document:', error));
+    if (!hasLoadedInitialDocuments) return;
+    if (documents.length > 0 || currentDocument) {
+      autoCreating.current = false;
+      return;
     }
+    if (autoCreating.current) return;
+    autoCreating.current = true;
+    createDocument('Untitled Document', '# Welcome to MarkdownMate\n\nStart writing...')
+      .then(handleSelectDocument)
+      .catch((error) => {
+        autoCreating.current = false;
+        console.error('Failed to create the first document:', error);
+      });
   }, [hasLoadedInitialDocuments, documents, currentDocument, createDocument, handleSelectDocument]);
 
   // Set initial document after load
@@ -125,11 +134,26 @@ export default function Editor() {
 
   useKeyboardShortcuts({ shortcuts });
 
-  if (!hasLoadedInitialDocuments || !currentDocument) {
+  // Before the first IndexedDB load finishes, show a brief loading state.
+  if (!hasLoadedInitialDocuments) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Load finished but there is no open document (e.g. the user deleted the last
+  // one and auto-creation is in flight or failed). Offer a working way out
+  // instead of a dead "Loading…" screen (MM-01).
+  if (!currentDocument) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">No document open.</p>
+          <Button onClick={handleCreateDocument}>New document</Button>
         </div>
       </div>
     );
