@@ -110,7 +110,11 @@ describe("production static server", () => {
 
   it("sends the security headers and hides the framework", async () => {
     const res = await fetch(`${baseUrl}/`);
-    expect(res.headers.get("content-security-policy")).toContain("default-src 'self'");
+    const csp = res.headers.get("content-security-policy") ?? "";
+    expect(csp).toContain("default-src 'self'");
+    // MM-03: remote images over https are allowed; http stays blocked.
+    expect(csp).toMatch(/img-src[^;]*\bhttps:/);
+    expect(csp).not.toMatch(/img-src[^;]*\bhttp:(?!\/)/); // no bare http: token
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
     expect(res.headers.get("x-powered-by")).toBeNull();
   });

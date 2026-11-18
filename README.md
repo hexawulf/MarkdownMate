@@ -3,7 +3,7 @@
 **A fast, local-first markdown editor with live preview, autosave, and GitHub-flavored markdown support.**
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-3.1.0-blue" alt="v3.1.0" />
+  <img src="https://img.shields.io/badge/version-3.2.0-blue" alt="v3.2.0" />
   <img src="https://img.shields.io/badge/React-18-blue?logo=react" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Vite-7-purple?logo=vite" alt="Vite" />

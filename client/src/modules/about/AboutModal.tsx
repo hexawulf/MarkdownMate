@@ -7,15 +7,23 @@ import {
 } from '@/components/ui/dialog';
 import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { getPersistenceState } from '@/lib/backup';
 
 interface AboutModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.2.0';
+const RELEASE_DATE = 'November 2026';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
+  const [persisted, setPersisted] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (open) void getPersistenceState().then(setPersisted);
+  }, [open]);
+
   const openLink = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
@@ -30,6 +38,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
             A fast, single-user, local-first online Markdown editor with real-time preview.
+            <span className="block text-xs pt-1">Released: {RELEASE_DATE}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -40,8 +49,34 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
             <p className="text-sm text-muted-foreground leading-relaxed">
               MarkdownMate is designed for personal note-taking and writing without the complexity 
               of collaboration features. All documents are stored locally in your browser using IndexedDB. 
-              No external CDNs, no analytics, no tracking.
+              No analytics and no tracking. Remote images referenced in your Markdown
+              (<code>![](https://…)</code>) load from their own hosts over HTTPS.
             </p>
+          </section>
+
+          {/* Storage (MM-04) */}
+          <section>
+            <h3 className="font-semibold mb-2">Storage</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Documents are stored in this browser's IndexedDB. Persistent storage:{' '}
+              <strong>
+                {persisted === null ? 'unknown' : persisted ? 'granted' : 'best-effort (may be evicted)'}
+              </strong>
+              . Use <em>Export all</em> from the Export menu to download a <code>.zip</code> backup,
+              and <em>Import</em> to restore it in any browser.
+            </p>
+          </section>
+
+          {/* What's new */}
+          <section>
+            <h3 className="font-semibold mb-2">What&apos;s new in 3.2.0</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• <strong>Trash</strong> — deleted documents can be restored for 30 days</li>
+              <li>• <strong>Export all / Import</strong> — back up every document as a .zip</li>
+              <li>• <strong>Two tabs stay in sync</strong> — with a warning if both have edits</li>
+              <li>• <strong>Undo survives</strong> switching between Editor, Split and Preview</li>
+              <li>• <strong>Remote images</strong> (https) now show in the preview</li>
+            </ul>
           </section>
 
           {/* Links */}
@@ -115,7 +150,8 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
             <h3 className="font-semibold mb-2">Hosting & Privacy</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Self-hosted on Raspberry Pi (piapps). All document processing happens locally in your browser. 
-              No analytics, no external API calls, no data collection.
+              No analytics and no data collection. The only outbound requests are remote images
+              you reference in your Markdown, which load over HTTPS from their hosts.
             </p>
           </section>
 

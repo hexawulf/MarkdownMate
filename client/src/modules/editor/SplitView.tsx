@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { PreviewPane } from './PreviewPane';
 import { Button } from '@/components/ui/button';
 import { Code, Eye, Columns } from 'lucide-react';
@@ -39,6 +38,22 @@ export function SplitView({
   fontSize = 14,
   wordWrap = true,
 }: SplitViewProps) {
+  // MM-06: there is a single EditorPane (one Monaco instance) that is never
+  // unmounted while switching between Editor, Split and Preview. The layout
+  // around it changes and panes are shown/hidden with CSS, so Monaco's undo
+  // history survives view switches.
+  const editor = (
+    <Suspense fallback={<EditorFallback />}>
+      <EditorPane
+        value={content}
+        onChange={onChange}
+        onCursorChange={onCursorChange}
+        fontSize={fontSize}
+        wordWrap={wordWrap}
+      />
+    </Suspense>
+  );
+
   return (
     <div className="flex flex-col h-full">
       {/* View mode toolbar */}
@@ -74,43 +89,34 @@ export function SplitView({
         </div>
       </div>
 
-      {/* Content area */}
+      {/* Content area. One EditorPane and one PreviewPane live in a single
+          stable flex row for every mode, so Monaco is never remounted when the
+          view changes. Widths/visibility change with the mode (MM-06). */}
       <div className="flex-1 overflow-hidden">
-        {viewMode === 'editor' && (
-          <Suspense fallback={<EditorFallback />}>
-            <EditorPane
-              value={content}
-              onChange={onChange}
-              onCursorChange={onCursorChange}
-              fontSize={fontSize}
-              wordWrap={wordWrap}
-            />
-          </Suspense>
-        )}
-
-        {viewMode === 'preview' && (
-          <PreviewPane markdown={content} />
-        )}
-
-        {viewMode === 'split' && (
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel defaultSize={50} minSize={20}>
-              <Suspense fallback={<EditorFallback />}>
-                <EditorPane
-                  value={content}
-                  onChange={onChange}
-                  onCursorChange={onCursorChange}
-                  fontSize={fontSize}
-                  wordWrap={wordWrap}
-                />
-              </Suspense>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50} minSize={20}>
-              <PreviewPane markdown={content} />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        )}
+        <div className="flex h-full w-full">
+          <div
+            className={
+              viewMode === 'preview'
+                ? 'hidden'
+                : viewMode === 'split'
+                  ? 'h-full w-1/2 border-r'
+                  : 'h-full w-full'
+            }
+          >
+            {editor}
+          </div>
+          <div
+            className={
+              viewMode === 'editor'
+                ? 'hidden'
+                : viewMode === 'split'
+                  ? 'h-full w-1/2'
+                  : 'h-full w-full'
+            }
+          >
+            <PreviewPane markdown={content} />
+          </div>
+        </div>
       </div>
     </div>
   );

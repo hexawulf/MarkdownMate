@@ -2,128 +2,71 @@
 
 ## Project Snapshot
 
-**MarkdownMate** is a real-time collaborative markdown editor with a VSCode-like experience.
+**MarkdownMate** is a fast, single-user, **local-first** Markdown editor with a
+live preview. There is no account system, no collaboration and no database.
 
-- **Type**: Fullstack monolith (client + server + shared types)
-- **Stack**: React 18 + Express + TypeScript + PostgreSQL + WebSockets
-- **Structure**: `client/` (frontend), `server/` (backend), `shared/` (types/schemas)
-- **Sub-docs**: See [client/AGENTS.md](client/AGENTS.md) and [server/AGENTS.md](server/AGENTS.md) for module-specific patterns
+- **Type**: Static client served by a tiny Express static server.
+- **Stack**: React 18 + TypeScript + Vite + Tailwind + shadcn/ui + Monaco +
+  unified/remark/rehype (KaTeX, Prism). State lives in a Zustand store backed by
+  the browser's **IndexedDB** (via `idb`). No PostgreSQL, Firebase or WebSockets.
+- **Structure**: `client/` (the app), `server/` (static server + health check),
+  `shared/` is not used.
 
 ## Root Setup Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Development (runs Vite dev server + Express backend)
-npm run dev
-
-# TypeScript check (no tests configured yet)
-npm run check
-
-# Build everything (client + server)
-npm run build
-
-# Production server
-npm start
-
-# Database migrations
-npm run db:push
+npm install          # install dependencies
+npm run dev          # Vite dev server + Express (http://localhost:5004)
+npm run check        # TypeScript type check (tsc)
+npm run lint         # ESLint (flat config)
+npm test             # Vitest (node + jsdom, fake-indexeddb)
+npm run test:coverage
+npm run build        # clean dist, build the client, bundle the server
+npm start            # production: node dist/index.js
 ```
 
-## Universal Conventions
+CI runs check, lint, test and build. There is no `db:push` and no migrations.
 
-### TypeScript
-- **Strict mode enabled** - No `any` types without justification
-- Import aliases: `@/` (client/src), `@shared/` (shared types)
-- Check types before committing: `npm run check`
+## Where things live
 
-### Code Style
-- **No ESLint/Prettier config** - Follow existing patterns manually
-- Functional components with hooks (React)
-- Use Tailwind utility classes for styling
-- Follow shadcn/ui patterns for components (see `client/src/components/ui/`)
-
-### Commits & Branches
-- **Format**: `type(scope): description` (Conventional Commits)
-  - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `chore`
-  - Example: `feat(editor): add real-time cursors`
-- **Branch naming**: `feature/your-feature-name`, `fix/bug-description`
-
-### PR Requirements
-- Run `npm run check` (TypeScript validation)
-- Run `npm run build` (ensure builds succeed)
-- Manual testing required (no automated tests yet)
-
-## Security & Secrets
-
-- **Never commit**: API keys, Firebase config with secrets, `.env` files
-- **Environment variables**: Store in `.env` (gitignored)
-  - `DATABASE_URL` - PostgreSQL connection string
-  - Firebase credentials in `FIREBASE_*` vars
-- **PII**: User emails stored via Firebase Auth; handle with care
-
-## JIT Index - Directory Map
-
-### Module Structure
 ```
-├── client/                # React frontend (Vite)
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Route pages
-│   │   ├── hooks/         # Custom hooks
-│   │   ├── stores/        # Zustand state
-│   │   ├── lib/           # Utilities
-│   │   └── types/         # Frontend-specific types
-│   └── AGENTS.md          → [see client/AGENTS.md](client/AGENTS.md)
-│
-├── server/                # Express backend
-│   ├── index.ts           # Server entry point
-│   ├── routes.ts          # REST API endpoints
-│   ├── db.ts              # Database connection
-│   ├── firebaseAuth.ts    # Auth middleware
-│   ├── storage.ts         # WebSocket management
-│   └── AGENTS.md          → [see server/AGENTS.md](server/AGENTS.md)
-│
-└── shared/                # Shared TypeScript types
-    └── schema.ts          # Drizzle ORM schemas + Zod validators
+client/src/
+  pages/Editor.tsx              # the single editor page
+  stores/useDocumentsStore.ts   # Zustand store over IndexedDB (markdownmate-db, v2)
+  hooks/useAutosave.ts          # debounced per-document autosave
+  lib/autosave.ts               # autosave controller (pure, tested)
+  lib/markdown.ts               # unified pipeline (sanitize -> KaTeX -> Prism)
+  lib/export.ts                 # single-document .md / .html / print export
+  lib/backup.ts                 # Export all / Import (.zip) + storage.persist()
+  modules/editor/               # SplitView, EditorPane (Monaco), PreviewPane, StatusBar
+  modules/about/                # About dialog
+  components/DocumentsSidebar.tsx  # list, rename, duplicate, delete, trash
+  components/ui/                # shadcn/ui primitives
+server/
+  app.ts                        # Express app factory + helmet CSP + /api/health
+  static.ts                     # production static file serving
+  vite.ts                       # dev Vite middleware
+  index.ts                      # entry: dev vs prod wiring, listen
+  src/logger/                   # Winston logger (LOG_FILE overridable)
 ```
 
-### Quick Find Commands
+## Conventions
+
+- TypeScript strict; avoid `any`. Imports use the `@/` alias for `client/src`.
+- Functional React components; Tailwind utility classes and `cn()` for styling;
+  theme via CSS variables consumed as `rgb(var(--token))` (see `client/src/index.css`).
+- Commits: `type(scope): description` (e.g. `fix(store): …`).
+- Storage: any IndexedDB schema change must be a **versioned upgrade** that keeps
+  every existing document, covered by a `fake-indexeddb` migration test.
+- The CSP in `server/app.ts` is strict and local-first; `img-src` additionally
+  allows `https:` so remote images render in the preview. Do not widen it further
+  without a reason.
+
+## Pre-PR checks
+
 ```bash
-# Search for a function across all modules
-rg -n "export (function|const) functionName"
-
-# Find a React component
-rg -n "export (function|const) ComponentName" client/src
-
-# Find API routes
-rg -n "app\.(get|post|patch|delete)" server/routes.ts
-
-# Find database queries
-rg -n "db\.(select|insert|update|delete)" server/
-
-# Find Zustand stores
-find client/src/stores -name "*.ts"
-
-# Find shadcn/ui components
-ls client/src/components/ui/
+npm run check && npm run lint && npm test && npm run build
 ```
 
-### Key Configuration Files
-- `package.json` - Dependencies and scripts
-- `tsconfig.json` - TypeScript configuration
-- `vite.config.ts` - Vite bundler config
-- `tailwind.config.ts` - Tailwind CSS config
-- `drizzle.config.ts` - Database ORM config
-- `shared/schema.ts` - Database schema + types
-
-## Definition of Done
-
-Before creating a PR, verify:
-- [ ] TypeScript passes: `npm run check`
-- [ ] Builds succeed: `npm run build`
-- [ ] Manual testing complete (no unit tests configured)
-- [ ] No secrets committed (check `.env`, Firebase keys)
-- [ ] Commit messages follow Conventional Commits format
-- [ ] Code follows existing patterns (see module AGENTS.md files)
+Module details: see [client/AGENTS.md](client/AGENTS.md) and
+[server/AGENTS.md](server/AGENTS.md). Older planning notes are in `docs/archive/`.

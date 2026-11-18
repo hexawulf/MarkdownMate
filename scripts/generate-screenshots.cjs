@@ -27,7 +27,7 @@ async function generateScreenshots() {
     });
 
     // Wait for fonts and images to load
-    await page.waitForTimeout(2000);
+    await new Promise((r) => setTimeout(r, 2000));
 
     // Ensure screenshots directory exists
     const screenshotsDir = path.join(__dirname, '..', 'docs', 'screenshots');
@@ -51,7 +51,7 @@ async function generateScreenshots() {
         timeout: 15000
       });
       
-      await page.waitForTimeout(2000);
+      await new Promise((r) => setTimeout(r, 2000));
       
       await page.screenshot({
         path: path.join(screenshotsDir, 'editor-view.png'),

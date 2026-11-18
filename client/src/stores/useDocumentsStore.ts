@@ -20,7 +20,6 @@ interface DocumentsDB extends DBSchema {
     indexes: {
       'by-updatedAt': number;
       'by-createdAt': number;
-      'by-isDeleted': number;
     };
   };
 }
@@ -28,34 +27,91 @@ interface DocumentsDB extends DBSchema {
 // Database instance
 let dbPromise: Promise<IDBPDatabase<DocumentsDB>> | null = null;
 
+export const DB_VERSION = 2;
+
+// Soft-deleted documents older than this are purged on load (MM-05).
+export const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
 const getDB = async () => {
   if (!dbPromise) {
-    dbPromise = openDB<DocumentsDB>('markdownmate-db', 1, {
-      upgrade(db) {
-        const store = db.createObjectStore('documents', { keyPath: 'id' });
-        store.createIndex('by-updatedAt', 'updatedAt');
-        store.createIndex('by-createdAt', 'createdAt');
-        store.createIndex('by-isDeleted', 'isDeleted');
+    dbPromise = openDB<DocumentsDB>('markdownmate-db', DB_VERSION, {
+      // MM-05: v2 drops the invalid boolean `by-isDeleted` index. Records are
+      // kept untouched; only the index is removed. An existing v1 database
+      // upgrades in place without losing a single document.
+      upgrade(db, oldVersion, _newVersion, tx) {
+        if (oldVersion < 1) {
+          const store = db.createObjectStore('documents', { keyPath: 'id' });
+          store.createIndex('by-updatedAt', 'updatedAt');
+          store.createIndex('by-createdAt', 'createdAt');
+        }
+        if (oldVersion >= 1 && oldVersion < 2) {
+          const store = tx.objectStore('documents');
+          // The v1 schema had a `by-isDeleted` index that the v2 types no longer
+          // declare, so reach it through a loosely-typed handle to drop it.
+          const indexNames = store.indexNames as unknown as DOMStringList;
+          if (indexNames.contains('by-isDeleted')) {
+            (store as unknown as { deleteIndex: (name: string) => void }).deleteIndex('by-isDeleted');
+          }
+        }
       },
     });
   }
   return dbPromise;
 };
 
+// Test-only: drop the memoized connection so a fresh fake-indexeddb is used.
+export const __resetDbForTests = () => {
+  dbPromise = null;
+  closeBroadcast();
+};
+
+// Cross-tab notification (MM-02). After any write we post {id, updatedAt} so
+// other tabs can reload or warn. BroadcastChannel may be missing in old
+// browsers / some test envs, so guard its use.
+export const BROADCAST_NAME = 'markdownmate';
+export interface DocBroadcast {
+  type: 'updated' | 'deleted';
+  id: string;
+  updatedAt: number;
+}
+
+let channel: BroadcastChannel | null = null;
+function getChannel(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === 'undefined') return null;
+  if (!channel) channel = new BroadcastChannel(BROADCAST_NAME);
+  return channel;
+}
+function closeBroadcast() {
+  if (channel) {
+    channel.close();
+    channel = null;
+  }
+}
+function broadcast(message: DocBroadcast) {
+  try {
+    getChannel()?.postMessage(message);
+  } catch {
+    // ignore: a closed/unavailable channel must never break a write
+  }
+}
+
 interface DocumentsState {
   documents: Document[];
+  trash: Document[];
   currentDocument: Document | null;
   isLoading: boolean;
   hasLoadedInitialDocuments: boolean;
   
   // CRUD operations
   loadDocuments: () => Promise<void>;
+  loadTrash: () => Promise<void>;
   getDocument: (id: string) => Promise<Document | undefined>;
   createDocument: (title: string, content?: string) => Promise<Document>;
   updateDocument: (id: string, updates: Partial<Document>) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
   softDeleteDocument: (id: string) => Promise<void>;
   restoreDocument: (id: string) => Promise<void>;
+  emptyTrash: () => Promise<void>;
   duplicateDocument: (id: string) => Promise<Document>;
   
   // Current document operations
@@ -67,6 +123,7 @@ interface DocumentsState {
 
 export const useDocumentsStore = create<DocumentsState>((set, get) => ({
   documents: [],
+  trash: [],
   currentDocument: null,
   isLoading: false,
   hasLoadedInitialDocuments: false,
@@ -75,12 +132,45 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     set({ isLoading: true });
     try {
       const db = await getDB();
-      const allDocs = await db.getAllFromIndex('documents', 'by-updatedAt');
-      const activeDocs = allDocs.filter(doc => !doc.isDeleted).reverse();
-      set({ documents: activeDocs, isLoading: false, hasLoadedInitialDocuments: true });
+      // MM-05: purge soft-deleted documents older than the retention window
+      // before listing. Done in one readwrite transaction.
+      const cutoff = Date.now() - TRASH_RETENTION_MS;
+      const tx = db.transaction('documents', 'readwrite');
+      const all = await tx.store.getAll();
+      for (const doc of all) {
+        if (doc.isDeleted && typeof doc.deletedAt === 'number' && doc.deletedAt < cutoff) {
+          await tx.store.delete(doc.id);
+        }
+      }
+      await tx.done;
+
+      const remaining = all.filter(
+        (doc) => !(doc.isDeleted && typeof doc.deletedAt === 'number' && doc.deletedAt < cutoff),
+      );
+      const activeDocs = remaining
+        .filter((doc) => !doc.isDeleted)
+        .sort((a, b) => a.updatedAt - b.updatedAt)
+        .reverse();
+      const trash = remaining
+        .filter((doc) => doc.isDeleted)
+        .sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0));
+      set({ documents: activeDocs, trash, isLoading: false, hasLoadedInitialDocuments: true });
     } catch (error) {
       console.error('Failed to load documents:', error);
       set({ isLoading: false, hasLoadedInitialDocuments: true });
+    }
+  },
+
+  loadTrash: async () => {
+    try {
+      const db = await getDB();
+      const all = await db.getAll('documents');
+      const trash = all
+        .filter((doc) => doc.isDeleted)
+        .sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0));
+      set({ trash });
+    } catch (error) {
+      console.error('Failed to load trash:', error);
     }
   },
 
@@ -112,6 +202,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
         documents: [newDoc, ...state.documents],
         currentDocument: newDoc,
       }));
+      broadcast({ type: 'updated', id: newDoc.id, updatedAt: newDoc.updatedAt });
       return newDoc;
     } catch (error) {
       console.error('Failed to create document:', error);
@@ -122,21 +213,32 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
   updateDocument: async (id: string, updates: Partial<Document>) => {
     try {
       const db = await getDB();
-      const doc = await db.get('documents', id);
-      if (!doc) throw new Error('Document not found');
-
+      // MM-02: read, merge and write in one readwrite transaction so a
+      // concurrent write cannot interleave between the read and the put.
+      const tx = db.transaction('documents', 'readwrite');
+      const doc = await tx.store.get(id);
+      if (!doc) {
+        await tx.done;
+        throw new Error('Document not found');
+      }
       const updatedDoc = {
         ...doc,
         ...updates,
         updatedAt: Date.now(),
       };
+      await tx.store.put(updatedDoc);
+      await tx.done;
 
-      await db.put('documents', updatedDoc);
-      
-      set(state => ({
-        documents: state.documents.map(d => d.id === id ? updatedDoc : d),
-        currentDocument: state.currentDocument?.id === id ? updatedDoc : state.currentDocument,
-      }));
+      set(state => {
+        // MM-08: a just-updated document moves to the top of the list, matching
+        // the by-updatedAt order the sidebar is meant to show.
+        const others = state.documents.filter(d => d.id !== id);
+        return {
+          documents: [updatedDoc, ...others],
+          currentDocument: state.currentDocument?.id === id ? updatedDoc : state.currentDocument,
+        };
+      });
+      broadcast({ type: 'updated', id, updatedAt: updatedDoc.updatedAt });
     } catch (error) {
       console.error('Failed to update document:', error);
       throw error;
@@ -149,8 +251,10 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       await db.delete('documents', id);
       set(state => ({
         documents: state.documents.filter(d => d.id !== id),
+        trash: state.trash.filter(d => d.id !== id),
         currentDocument: state.currentDocument?.id === id ? null : state.currentDocument,
       }));
+      broadcast({ type: 'deleted', id, updatedAt: Date.now() });
     } catch (error) {
       console.error('Failed to delete document:', error);
       throw error;
@@ -160,21 +264,27 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
   softDeleteDocument: async (id: string) => {
     try {
       const db = await getDB();
-      const doc = await db.get('documents', id);
-      if (!doc) throw new Error('Document not found');
-
+      const tx = db.transaction('documents', 'readwrite');
+      const doc = await tx.store.get(id);
+      if (!doc) {
+        await tx.done;
+        throw new Error('Document not found');
+      }
       const updatedDoc = {
         ...doc,
         isDeleted: true,
         deletedAt: Date.now(),
         updatedAt: Date.now(),
       };
+      await tx.store.put(updatedDoc);
+      await tx.done;
 
-      await db.put('documents', updatedDoc);
       set(state => ({
         documents: state.documents.filter(d => d.id !== id),
+        trash: [updatedDoc, ...state.trash.filter(d => d.id !== id)],
         currentDocument: state.currentDocument?.id === id ? null : state.currentDocument,
       }));
+      broadcast({ type: 'updated', id, updatedAt: updatedDoc.updatedAt });
     } catch (error) {
       console.error('Failed to soft delete document:', error);
       throw error;
@@ -184,22 +294,47 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
   restoreDocument: async (id: string) => {
     try {
       const db = await getDB();
-      const doc = await db.get('documents', id);
-      if (!doc) throw new Error('Document not found');
-
+      const tx = db.transaction('documents', 'readwrite');
+      const doc = await tx.store.get(id);
+      if (!doc) {
+        await tx.done;
+        throw new Error('Document not found');
+      }
       const updatedDoc = {
         ...doc,
         isDeleted: false,
         deletedAt: undefined,
         updatedAt: Date.now(),
       };
+      await tx.store.put(updatedDoc);
+      await tx.done;
 
-      await db.put('documents', updatedDoc);
       set(state => ({
         documents: [updatedDoc, ...state.documents],
+        trash: state.trash.filter(d => d.id !== id),
       }));
+      broadcast({ type: 'updated', id, updatedAt: updatedDoc.updatedAt });
     } catch (error) {
       console.error('Failed to restore document:', error);
+      throw error;
+    }
+  },
+
+  emptyTrash: async () => {
+    try {
+      const db = await getDB();
+      const trashed = get().trash;
+      const tx = db.transaction('documents', 'readwrite');
+      for (const doc of trashed) {
+        await tx.store.delete(doc.id);
+      }
+      await tx.done;
+      set({ trash: [] });
+      for (const doc of trashed) {
+        broadcast({ type: 'deleted', id: doc.id, updatedAt: Date.now() });
+      }
+    } catch (error) {
+      console.error('Failed to empty trash:', error);
       throw error;
     }
   },
@@ -222,6 +357,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       set(state => ({
         documents: [duplicatedDoc, ...state.documents],
       }));
+      broadcast({ type: 'updated', id: duplicatedDoc.id, updatedAt: duplicatedDoc.updatedAt });
       return duplicatedDoc;
     } catch (error) {
       console.error('Failed to duplicate document:', error);

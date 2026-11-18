@@ -2,8 +2,9 @@ import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
 
-// Absolute path for centralized log used by PiDeck
-const centralizedLogFile = '/home/zk/logs/markdownmate.log';
+// Centralized log path used by PiDeck. Overridable via LOG_FILE (MM-09); the
+// current production path is the default so nothing changes unless set.
+const centralizedLogFile = process.env.LOG_FILE || '/home/zk/logs/markdownmate.log';
 
 // Ensure the target log directory exists
 const centralizedLogDir = path.dirname(centralizedLogFile);
