@@ -41,11 +41,14 @@ export default function Editor() {
   const { theme, toggleTheme } = useTheme();
 
   const handleSelectDocument = useCallback((doc: Document) => {
+    // MM-07: selecting the document that is already open is a no-op, so a
+    // pending (debounced) edit is not clobbered by resetting to stored text.
+    if (currentDocument?.id === doc.id) return;
     setCurrentDocument(doc);
     setContent(doc.content);
     setLastSaved(doc.updatedAt);
     setHasUnsavedChanges(false);
-  }, [setCurrentDocument]);
+  }, [setCurrentDocument, currentDocument]);
 
   // Load documents on mount
   useEffect(() => {
