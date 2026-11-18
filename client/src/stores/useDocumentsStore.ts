@@ -54,6 +54,24 @@ const getDB = async () => {
           }
         }
       },
+      // Another tab still holds an older connection (for example a v3.1.0 tab
+      // opened before the deploy, which never closes on versionchange). The
+      // browser waits until it closes; tell the user instead of "Loading..."
+      // forever. The open resolves by itself once the other tab is closed.
+      blocked() {
+        useDocumentsStore.setState({ dbBlocked: true });
+      },
+      // A newer version in another tab needs to upgrade: release this
+      // connection and reload, so that tab is never stuck behind this one.
+      blocking() {
+        void dbPromise?.then((db) => db.close());
+        dbPromise = null;
+        if (typeof window !== 'undefined') window.location.reload();
+      },
+      // The browser closed the connection unexpectedly: reopen on next use.
+      terminated() {
+        dbPromise = null;
+      },
     });
   }
   return dbPromise;
@@ -101,6 +119,8 @@ interface DocumentsState {
   currentDocument: Document | null;
   isLoading: boolean;
   hasLoadedInitialDocuments: boolean;
+  // True while the IndexedDB upgrade waits for another (older) tab to close.
+  dbBlocked: boolean;
   
   // CRUD operations
   loadDocuments: () => Promise<void>;
@@ -127,11 +147,13 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
   currentDocument: null,
   isLoading: false,
   hasLoadedInitialDocuments: false,
+  dbBlocked: false,
 
   loadDocuments: async () => {
     set({ isLoading: true });
     try {
       const db = await getDB();
+      if (get().dbBlocked) set({ dbBlocked: false });
       // MM-05: purge soft-deleted documents older than the retention window
       // before listing. Done in one readwrite transaction.
       const cutoff = Date.now() - TRASH_RETENTION_MS;

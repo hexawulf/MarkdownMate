@@ -3,7 +3,7 @@
 **A fast, local-first Markdown editor with live preview. Your documents stay in your browser.**
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-3.2.0-blue" alt="v3.2.0" />
+  <img src="https://img.shields.io/badge/version-3.2.1-blue" alt="v3.2.1" />
   <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node 22+" />
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
@@ -74,6 +74,7 @@ You write in Monaco, the editor from VS Code. The preview renders GitHub Flavore
 - The app asks the browser for **persistent storage**. The About dialog shows if the browser granted it. If it did not, the browser may clear the data when disk space runs low.
 - Clearing site data, using a private window or changing browsers means a different (or empty) document list. Use **Export all** regularly to keep a backup.
 - Version 3.2.0 upgrades the database from schema version 1 to version 2 and keeps every document. After the upgrade, older app versions cannot open the database again.
+- If MarkdownMate is open in another tab or window while a new version upgrades the database, the new tab asks you to close the other one. It continues by itself as soon as you do. No document is lost.
 
 ## Keyboard shortcuts
 
@@ -210,6 +211,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 | Version   | Date       | Highlights                                                                                                                 |
 | --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **3.2.1** | 2026-11-18 | Fix: no endless "Loading…" when an older MarkdownMate tab is still open during the upgrade                                 |
 | **3.2.0** | 2026-11-18 | Trash, Export all / Import, persistent storage, tab sync, undo across views, remote https images, DB schema v2             |
 | **3.1.0** | 2026-11-12 | Math and code highlighting fixed, per-document autosave, 375 kB entry bundle, server bundle no longer public, tests and CI |
 | **3.0.0** | 2026-03-15 | GitHub-style theme, startup race fix, smaller Monaco bundle, hardening                                                     |

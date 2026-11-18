@@ -5,6 +5,16 @@ All notable changes to MarkdownMate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-11-18
+
+### Fixed
+- The app no longer hangs on "Loading…" when a tab with an older version
+  (3.1.0) is still open during the database upgrade to schema v2. The
+  browser holds the upgrade until the old tab closes; the app now says so
+  ("Close every other MarkdownMate tab or window") and continues by itself.
+- A 3.2.x tab now releases its database connection and reloads when a newer
+  version in another tab needs to upgrade, so future upgrades cannot get stuck.
+
 ## [3.2.0] - 2026-11-18
 
 Audit 2026-11-18 (findings MM-01…MM-11).
