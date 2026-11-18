@@ -7,6 +7,8 @@ import {
 } from '@/components/ui/dialog';
 import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { getPersistenceState } from '@/lib/backup';
 
 interface AboutModalProps {
   open: boolean;
@@ -16,6 +18,11 @@ interface AboutModalProps {
 const APP_VERSION = '3.1.0';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
+  const [persisted, setPersisted] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (open) void getPersistenceState().then(setPersisted);
+  }, [open]);
+
   const openLink = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
@@ -42,6 +49,19 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
               of collaboration features. All documents are stored locally in your browser using IndexedDB. 
               No analytics and no tracking. Remote images referenced in your Markdown
               (<code>![](https://…)</code>) load from their own hosts over HTTPS.
+            </p>
+          </section>
+
+          {/* Storage (MM-04) */}
+          <section>
+            <h3 className="font-semibold mb-2">Storage</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Documents are stored in this browser's IndexedDB. Persistent storage:{' '}
+              <strong>
+                {persisted === null ? 'unknown' : persisted ? 'granted' : 'best-effort (may be evicted)'}
+              </strong>
+              . Use <em>Export all</em> from the Export menu to download a <code>.zip</code> backup,
+              and <em>Import</em> to restore it in any browser.
             </p>
           </section>
 

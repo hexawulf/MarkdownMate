@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useAutosave } from '@/hooks/useAutosave';
 import { useKeyboardShortcuts, createEditorShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { exportAsMarkdown, exportAsHtml, exportAsPdf } from '@/lib/export';
+import { exportAllDocuments, readImportFiles, ensurePersistentStorage } from '@/lib/backup';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -184,6 +185,47 @@ export default function Editor() {
     exportAsPdf();
   }, []);
 
+  // MM-04: request persistent storage once the first save happens, so the
+  // browser is less likely to evict the IndexedDB documents.
+  const requestedPersistRef = useRef(false);
+  useEffect(() => {
+    if (requestedPersistRef.current) return;
+    if (documents.length === 0) return;
+    requestedPersistRef.current = true;
+    void ensurePersistentStorage();
+  }, [documents.length]);
+
+  const handleExportAll = useCallback(async () => {
+    try {
+      await exportAllDocuments(documents);
+    } catch (error) {
+      console.error('Export all failed:', error);
+    }
+  }, [documents]);
+
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const handleImportClick = useCallback(() => {
+    importInputRef.current?.click();
+  }, []);
+
+  const handleImportFiles = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    try {
+      const imported = await readImportFiles(files);
+      let last: Document | null = null;
+      for (const doc of imported) {
+        // Imported documents are always new; they never overwrite existing ones.
+        last = await createDocument(doc.title || 'Untitled Document', doc.content);
+      }
+      if (last) handleSelectDocument(last);
+    } catch (error) {
+      console.error('Import failed:', error);
+    } finally {
+      event.target.value = '';
+    }
+  }, [createDocument, handleSelectDocument]);
+
   // Keyboard shortcuts
   const shortcuts = createEditorShortcuts({
     onSave: saveNow,
@@ -284,6 +326,13 @@ export default function Editor() {
                 Export as HTML
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleExportAll}>
+                Export all (.zip backup)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleImportClick}>
+                Import (.md or .zip)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleExportPdf}>
                 Print to PDF
               </DropdownMenuItem>
@@ -295,6 +344,16 @@ export default function Editor() {
           </Button>
         </div>
       </div>
+
+      {/* Hidden input for Import (MM-04) */}
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".md,.zip,text/markdown,application/zip"
+        multiple
+        className="hidden"
+        onChange={handleImportFiles}
+      />
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
