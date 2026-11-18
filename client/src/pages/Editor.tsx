@@ -303,6 +303,7 @@ export default function Editor() {
             currentDocumentId={currentDocument.id}
             onSelectDocument={handleSelectDocument}
             onCreateDocument={handleCreateDocument}
+            onBeforeMutate={saveNow}
           />
         </div>
         

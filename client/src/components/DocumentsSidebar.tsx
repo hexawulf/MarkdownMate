@@ -22,19 +22,24 @@ import {
 } from './ui/alert-dialog';
 import { FileText, Plus, Search, MoreVertical, Trash2, Copy, Edit2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentsSidebarProps {
   currentDocumentId: string | null;
   onSelectDocument: (doc: Document) => void;
   onCreateDocument: () => void;
+  /** Flush any pending editor edit before a mutation reads from storage (MM-08). */
+  onBeforeMutate?: () => Promise<void> | void;
 }
 
 export function DocumentsSidebar({
   currentDocumentId,
   onSelectDocument,
   onCreateDocument,
+  onBeforeMutate,
 }: DocumentsSidebarProps) {
   const { documents, searchDocuments, duplicateDocument, softDeleteDocument } = useDocumentsStore();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
@@ -46,16 +51,35 @@ export function DocumentsSidebar({
   }, [searchQuery, searchDocuments, documents]);
 
   const handleDelete = async () => {
-    if (documentToDelete) {
+    if (!documentToDelete) return;
+    try {
       await softDeleteDocument(documentToDelete.id);
+    } catch {
+      toast({
+        title: 'Could not delete document',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
       setDeleteDialogOpen(false);
       setDocumentToDelete(null);
     }
   };
 
   const handleDuplicate = async (doc: Document) => {
-    const duplicated = await duplicateDocument(doc.id);
-    onSelectDocument(duplicated);
+    try {
+      // MM-08: flush the pending edit first so the copy includes it, not the
+      // stale stored text.
+      await onBeforeMutate?.();
+      const duplicated = await duplicateDocument(doc.id);
+      onSelectDocument(duplicated);
+    } catch {
+      toast({
+        title: 'Could not duplicate document',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const startRename = (doc: Document) => {
@@ -64,10 +88,18 @@ export function DocumentsSidebar({
   };
 
   const { updateDocument } = useDocumentsStore();
-  
+
   const handleRename = async (id: string) => {
     if (renameValue.trim()) {
-      await updateDocument(id, { title: renameValue.trim() });
+      try {
+        await updateDocument(id, { title: renameValue.trim() });
+      } catch {
+        toast({
+          title: 'Could not rename document',
+          description: 'Please try again.',
+          variant: 'destructive',
+        });
+      }
     }
     setRenameId(null);
   };

@@ -175,10 +175,15 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       await tx.store.put(updatedDoc);
       await tx.done;
 
-      set(state => ({
-        documents: state.documents.map(d => d.id === id ? updatedDoc : d),
-        currentDocument: state.currentDocument?.id === id ? updatedDoc : state.currentDocument,
-      }));
+      set(state => {
+        // MM-08: a just-updated document moves to the top of the list, matching
+        // the by-updatedAt order the sidebar is meant to show.
+        const others = state.documents.filter(d => d.id !== id);
+        return {
+          documents: [updatedDoc, ...others],
+          currentDocument: state.currentDocument?.id === id ? updatedDoc : state.currentDocument,
+        };
+      });
       broadcast({ type: 'updated', id, updatedAt: updatedDoc.updatedAt });
     } catch (error) {
       console.error('Failed to update document:', error);

@@ -68,3 +68,16 @@ describe("MM-02: single-transaction writes + broadcast", () => {
     expect(received.some((m) => (m as { id: string }).id === doc.id)).toBe(true);
   });
 });
+
+describe("MM-08: an updated document moves to the top of the list", () => {
+  it("updateDocument hoists the document to the front", async () => {
+    const store = useDocumentsStore.getState();
+    const a = await store.createDocument("A", "a");
+    const b = await store.createDocument("B", "b");
+    // b is newest, so it is first; a is second.
+    expect(useDocumentsStore.getState().documents[0].id).toBe(b.id);
+
+    await useDocumentsStore.getState().updateDocument(a.id, { content: "a2" });
+    expect(useDocumentsStore.getState().documents[0].id).toBe(a.id);
+  });
+});
