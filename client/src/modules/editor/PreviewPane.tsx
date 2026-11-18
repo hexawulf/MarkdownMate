@@ -25,7 +25,7 @@ export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
         result = await markdownToHtml(markdown);
       } catch (error) {
         console.error('Error rendering markdown:', error);
-        result = '<p style="color: var(--dt-seal-red)">Error rendering markdown</p>';
+        result = '<p style="color: rgb(var(--destructive))">Error rendering markdown</p>';
       }
       if (!cancelled) {
         hasRendered.current = true;

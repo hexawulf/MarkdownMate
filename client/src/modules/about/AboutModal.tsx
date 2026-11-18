@@ -15,7 +15,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.2.0';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
   const [persisted, setPersisted] = useState<boolean | null>(null);

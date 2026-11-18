@@ -5,6 +5,38 @@ All notable changes to MarkdownMate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-11-18
+
+Audit 2026-11-18 (findings MM-01…MM-11).
+
+### Fixed
+- Deleting the only document no longer leaves the page stuck on "Loading…"; the
+  app auto-creates a document or shows a "New document" empty state (MM-01).
+- Re-selecting the already-open document is a no-op, so a pending edit is kept (MM-07).
+- Writes use a single IndexedDB transaction and a `BroadcastChannel`, so two tabs
+  stay in sync; a tab with unsaved edits sees a "Changed in another tab" banner (MM-02).
+- Remote images render in the preview: `img-src` allows `https:` (http still blocked) (MM-03).
+- Duplicate flushes the pending edit first; delete/duplicate/rename show a toast on
+  failure; an edited document moves to the top of the list (MM-08).
+- The editor keeps a single Monaco instance across Editor/Split/Preview, so undo
+  history survives view switches (MM-06).
+- The render-error colour uses a real theme token instead of an undefined one (MM-11).
+
+### Added
+- Persistent-storage request (`navigator.storage.persist()`), "Export all" (a
+  `.zip` of `.md` files + `manifest.json`) and "Import"; the About dialog shows
+  the persistence state (MM-04).
+- A working Trash: IndexedDB schema version 2 (drops the invalid `by-isDeleted`
+  index, keeps every record), restore, delete forever, empty trash, and a 30-day
+  auto-purge (MM-05).
+- `fake-indexeddb` + React Testing Library test harness.
+
+### Changed
+- `tailwindcss-animate` moved to devDependencies; production audit 14 → 4 (MM-10).
+- pm2 runs `dist/index.js` directly; the log path comes from `LOG_FILE` (MM-09).
+- `AGENTS.md` (root, client, server) rewritten for the real app; stale planning
+  docs moved to `docs/archive/`; the screenshot script fixed as `.cjs` (MM-11).
+
 ## [3.1.0] - 2026-11-12
 
 ### Refactoring audit: fixes, smaller bundle, tests and CI
