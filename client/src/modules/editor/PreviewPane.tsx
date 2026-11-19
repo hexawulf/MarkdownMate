@@ -22,7 +22,8 @@ export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
     const render = async () => {
       let result: string;
       try {
-        result = await markdownToHtml(markdown);
+        // Ask for source-line anchors so sync scroll can map lines to offsets.
+        result = await markdownToHtml(markdown, { sourceLines: true });
       } catch (error) {
         console.error('Error rendering markdown:', error);
         result = '<p style="color: rgb(var(--destructive))">Error rendering markdown</p>';

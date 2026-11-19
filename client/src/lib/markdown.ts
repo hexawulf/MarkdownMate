@@ -1,10 +1,29 @@
+export interface MarkdownToHtmlOptions {
+  /**
+   * Add `data-source-line` anchors to top-level blocks (used by the live
+   * preview for sync scroll). Off by default so exported HTML stays clean.
+   */
+  sourceLines?: boolean;
+}
+
 /**
- * Convert markdown to sanitized HTML
+ * Convert markdown to sanitized HTML.
+ *
+ * With `{ sourceLines: true }` the preview pipeline stamps `data-source-line`
+ * on top-level blocks; the default (export, counting) produces clean HTML.
  */
-export async function markdownToHtml(markdown: string): Promise<string> {
+export async function markdownToHtml(
+  markdown: string,
+  options: MarkdownToHtmlOptions = {},
+): Promise<string> {
   try {
-    const { markdownProcessor } = await import('./markdownProcessor');
-    const result = await markdownProcessor.process(markdown);
+    const { markdownProcessor, markdownProcessorWithSourceLines } = await import(
+      './markdownProcessor'
+    );
+    const processor = options.sourceLines
+      ? markdownProcessorWithSourceLines
+      : markdownProcessor;
+    const result = await processor.process(markdown);
     return String(result);
   } catch (error) {
     console.error('Error processing markdown:', error);
