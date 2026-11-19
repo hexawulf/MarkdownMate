@@ -43,6 +43,12 @@ export default defineConfig({
           url: `${BASE_URL}/api/health`,
           reuseExistingServer: process.env.CI === undefined,
           timeout: 180_000,
+          // The server's Winston logger defaults LOG_FILE to /home/zk/logs,
+          // which is this homelab host's path and is not writable on a CI
+          // runner (EACCES on mkdir). Point it at a writable, gitignored path so
+          // the production server starts the same way everywhere. This only
+          // moves the log file; it does not change server behaviour.
+          env: { LOG_FILE: 'test-results/markdownmate-e2e.log' },
         },
       }
     : {}),
