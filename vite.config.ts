@@ -1,7 +1,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { URL } from "url";
+import { fileURLToPath } from "url";
+
+// new URL(import.meta.url).pathname yields "/D:/..." on Windows, which breaks
+// the build (unresolvable entry) and every dev request; fileURLToPath gives a
+// real OS path. Behaviour is identical on Linux/macOS.
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -9,7 +14,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(path.dirname(new URL(import.meta.url).pathname), "client", "src"),
+      "@": path.resolve(rootDir, "client", "src"),
     },
   },
   optimizeDeps: {
@@ -20,9 +25,9 @@ export default defineConfig({
       "wouter",
     ],
   },
-  root: path.resolve(path.dirname(new URL(import.meta.url).pathname), "client"),
+  root: path.resolve(rootDir, "client"),
   build: {
-    outDir: path.resolve(path.dirname(new URL(import.meta.url).pathname), "dist", "public"),
+    outDir: path.resolve(rootDir, "dist", "public"),
     emptyOutDir: true,
     sourcemap: false,
     minify: true,
