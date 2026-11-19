@@ -49,6 +49,7 @@ You write in Monaco, the editor from VS Code. The preview renders GitHub Flavore
 
 - Monaco editor with Markdown highlighting, adjustable font size (10–24 px) and word wrap.
 - Three views: **Editor**, **Split** (50/50) and **Preview**. The editor keeps its undo history when you switch views.
+- **Sync scroll** in Split view: the editor and preview scroll together, in both directions, tracking by source line. Turn it off in **Settings → Sync Scroll** (on by default, remembered per browser).
 - GitHub Flavored Markdown: tables, task lists, strikethrough, fenced code blocks.
 - Math with KaTeX: inline `$...$` and block `$$...$$`.
 - Syntax highlighting in code blocks (Prism).
