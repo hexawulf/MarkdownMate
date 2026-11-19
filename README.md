@@ -3,7 +3,7 @@
 **A fast, local-first Markdown editor with live preview. Your documents stay in your browser.**
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-3.3.0-blue" alt="v3.3.0" />
+  <img src="https://img.shields.io/badge/version-3.3.1-blue" alt="v3.3.1" />
   <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node 22+" />
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
@@ -247,6 +247,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 | Version   | Date       | Highlights                                                                                                                 |
 | --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **3.3.1** | 2026-11-19 | Phone layout: the document list is a slide-over panel; each security header sent once; 0 audit findings                 |
 | **3.3.0** | 2026-11-19 | Browser smoke test in CI (incl. the stuck-upgrade case), KaTeX 0.19, sidebar syncs across tabs                           |
 | **3.2.1** | 2026-11-18 | Fix: no endless "Loading…" when an older MarkdownMate tab is still open during the upgrade                                 |
 | **3.2.0** | 2026-11-18 | Trash, Export all / Import, persistent storage, tab sync, undo across views, remote https images, DB schema v2             |
