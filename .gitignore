@@ -113,3 +113,8 @@ temp/
 # Replit specific
 .replit
 replit.nix
+
+# Playwright (e2e)
+playwright-report/
+test-results/
+blob-report/

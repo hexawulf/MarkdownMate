@@ -42,3 +42,8 @@ server/
 ```bash
 npm run check && npm run build && npm test
 ```
+
+The Playwright e2e suite (`npm run test:e2e`, in `tests/e2e/`) starts this
+server's production build and asserts the headers it sends (one
+`X-Frame-Options`, a CSP whose `img-src` includes `https:`, no `X-Powered-By`),
+so a CSP or header change here must keep that suite green.

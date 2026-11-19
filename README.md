@@ -3,7 +3,7 @@
 **A fast, local-first Markdown editor with live preview. Your documents stay in your browser.**
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-3.2.1-blue" alt="v3.2.1" />
+  <img src="https://img.shields.io/badge/version-3.3.0-blue" alt="v3.3.0" />
   <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node 22+" />
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
@@ -26,6 +26,7 @@
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Quick start](#quick-start)
 - [Scripts](#scripts)
+- [Testing](#testing)
 - [Project layout](#project-layout)
 - [Deployment](#deployment)
 - [Privacy and security](#privacy-and-security)
@@ -122,12 +123,47 @@ Configuration is small. Copy `.env.example` to `.env` if you want to change it (
 | `npm test`              | Run the Vitest suite once                                 |
 | `npm run test:watch`    | Run Vitest in watch mode                                  |
 | `npm run test:coverage` | Run the tests with V8 coverage                            |
+| `npm run test:e2e`      | Playwright browser smoke test against the production build |
+| `npm run test:e2e:live` | Run only the read-only `@live` tests against markdownmate.org |
 | `npm run lint`          | ESLint                                                    |
 | `npm run lint:fix`      | ESLint with automatic fixes                               |
 | `npm run typecheck`     | TypeScript check (`tsc --noEmit`)                         |
 | `npm run metrics:all`   | Measure bundle, Monaco, preview and IndexedDB performance |
 
-CI (GitHub Actions, Node 22) runs type check, lint, tests and build on pushes to `main` and on pull requests.
+CI (GitHub Actions, Node 22) runs type check, lint, unit tests, build and the
+Playwright browser smoke test on pushes to `main` and on pull requests.
+
+## Testing
+
+Two layers:
+
+- **Unit tests** — Vitest with `fake-indexeddb` and React Testing Library, for
+  the store, the IndexedDB migration, autosave, the markdown pipeline, the zip
+  backup and the server routes/headers. Run `npm test`.
+- **End-to-end** — a Playwright smoke test (headless Chromium) that drives the
+  **production build** (`node dist/index.js`), so it covers the parts no unit
+  test can: rendering under the real helmet CSP, the KaTeX + Prism output,
+  IndexedDB persistence across a reload, the trash, the zip backup round-trip,
+  two-tab `BroadcastChannel` sync and the schema-upgrade handling.
+
+Run the e2e suite locally (it builds and starts the server for you):
+
+```bash
+npm run test:e2e
+```
+
+First run only, to fetch the pinned browser:
+
+```bash
+npx playwright install chromium
+```
+
+A small read-only subset is tagged `@live` (load, render, headers) and can run
+against the deployed site without writing any document:
+
+```bash
+npm run test:e2e:live   # targets https://markdownmate.org
+```
 
 ## Project layout
 
@@ -211,6 +247,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 | Version   | Date       | Highlights                                                                                                                 |
 | --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **3.3.0** | 2026-11-19 | Browser smoke test in CI (incl. the stuck-upgrade case), KaTeX 0.19, sidebar syncs across tabs                           |
 | **3.2.1** | 2026-11-18 | Fix: no endless "Loading…" when an older MarkdownMate tab is still open during the upgrade                                 |
 | **3.2.0** | 2026-11-18 | Trash, Export all / Import, persistent storage, tab sync, undo across views, remote https images, DB schema v2             |
 | **3.1.0** | 2026-11-12 | Math and code highlighting fixed, per-document autosave, 375 kB entry bundle, server bundle no longer public, tests and CI |

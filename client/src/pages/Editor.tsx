@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDocumentsStore, type Document } from '@/stores/useDocumentsStore';
-import { BROADCAST_NAME, type DocBroadcast } from '@/stores/useDocumentsStore';
+import { BROADCAST_NAME, TAB_ID, type DocBroadcast } from '@/stores/useDocumentsStore';
 import { DocumentsSidebar } from '@/components/DocumentsSidebar';
 import { SplitView, type ViewMode } from '@/modules/editor/SplitView';
 import { StatusBar } from '@/modules/editor/StatusBar';
@@ -118,13 +118,25 @@ export default function Editor() {
   //  - no pending edit  -> silently reload the newer content;
   //  - pending edit     -> show the "changed in another tab" banner and pause
   //                        autosave until the user picks Reload or Keep mine.
+  // Any broadcast also refreshes the document list, so a document created,
+  // renamed or deleted in another tab shows up in this tab's sidebar without a
+  // reload (the "two tabs stay in sync" promise covers the list, not just the
+  // open document).
   useEffect(() => {
     if (typeof BroadcastChannel === 'undefined') return;
     const ch = new BroadcastChannel(BROADCAST_NAME);
     const onMessage = async (event: MessageEvent<DocBroadcast>) => {
       const msg = event.data;
+      // Skip this tab's own writes: its state is already current, and reloading
+      // the list after every local autosave would rescan IndexedDB while typing.
+      if (!msg || msg.origin === TAB_ID) return;
+
+      // Keep the sidebar list current for changes from other tabs. loadDocuments
+      // reads from IndexedDB, the single source of truth both tabs share.
+      void loadDocuments();
+
       const openId = currentDocument?.id;
-      if (!openId || !msg || msg.id !== openId) return;
+      if (!openId || msg.id !== openId) return;
       if (msg.type === 'deleted') return; // handled by the empty-state flow
       if (msg.updatedAt <= (currentDocument?.updatedAt ?? 0)) return;
 
@@ -146,7 +158,7 @@ export default function Editor() {
       ch.removeEventListener('message', onMessage);
       ch.close();
     };
-  }, [currentDocument, getDocument, hasPending, setCurrentDocument]);
+  }, [currentDocument, getDocument, hasPending, setCurrentDocument, loadDocuments]);
 
   const handleReloadExternal = useCallback(async () => {
     if (!currentDocument) return;

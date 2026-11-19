@@ -36,6 +36,14 @@ export default tseslint.config(
     },
   },
   {
+    // Playwright e2e tests run under Node (test runner) but also drive the
+    // browser via page.evaluate, so allow both global sets.
+    files: ["tests/**/*.ts"],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
+  {
     files: ["**/*.cjs"],
     languageOptions: {
       sourceType: "commonjs",

@@ -91,7 +91,13 @@ export interface DocBroadcast {
   type: 'updated' | 'deleted';
   id: string;
   updatedAt: number;
+  /** TAB_ID of the sending tab. A tab hears its own posts on its other
+   *  BroadcastChannel objects, so listeners use this to skip them. */
+  origin?: string;
 }
+
+/** Identifies this tab in cross-tab broadcasts. */
+export const TAB_ID: string = crypto.randomUUID();
 
 let channel: BroadcastChannel | null = null;
 function getChannel(): BroadcastChannel | null {
@@ -107,7 +113,7 @@ function closeBroadcast() {
 }
 function broadcast(message: DocBroadcast) {
   try {
-    getChannel()?.postMessage(message);
+    getChannel()?.postMessage({ ...message, origin: TAB_ID });
   } catch {
     // ignore: a closed/unavailable channel must never break a write
   }

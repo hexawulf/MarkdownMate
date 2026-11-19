@@ -50,6 +50,9 @@ client/src/
   start with `// @vitest-environment jsdom`. See
   `stores/useDocumentsStore.test.ts`, `stores/migration.test.ts`,
   `pages/Editor.test.tsx`, `lib/backup.test.ts`.
+- End-to-end: `npm run test:e2e` runs the Playwright smoke test in `tests/e2e/`
+  against the production build. It exercises the real browser paths (IndexedDB,
+  BroadcastChannel, the CSP, KaTeX/Prism render) and must not mock them.
 
 ## Gotchas
 
