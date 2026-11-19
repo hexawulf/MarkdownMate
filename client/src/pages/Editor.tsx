@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDocumentsStore, type Document } from '@/stores/useDocumentsStore';
-import { BROADCAST_NAME, type DocBroadcast } from '@/stores/useDocumentsStore';
+import { BROADCAST_NAME, TAB_ID, type DocBroadcast } from '@/stores/useDocumentsStore';
 import { DocumentsSidebar } from '@/components/DocumentsSidebar';
 import { SplitView, type ViewMode } from '@/modules/editor/SplitView';
 import { StatusBar } from '@/modules/editor/StatusBar';
@@ -127,7 +127,9 @@ export default function Editor() {
     const ch = new BroadcastChannel(BROADCAST_NAME);
     const onMessage = async (event: MessageEvent<DocBroadcast>) => {
       const msg = event.data;
-      if (!msg) return;
+      // Skip this tab's own writes: its state is already current, and reloading
+      // the list after every local autosave would rescan IndexedDB while typing.
+      if (!msg || msg.origin === TAB_ID) return;
 
       // Keep the sidebar list current for changes from other tabs. loadDocuments
       // reads from IndexedDB, the single source of truth both tabs share.
