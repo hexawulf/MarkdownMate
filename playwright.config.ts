@@ -37,9 +37,10 @@ export default defineConfig({
   ...(OWN_SERVER
     ? {
         webServer: {
-          // Build is a CI step of its own; here we only (re)build if dist is
-          // missing, then start the real production server on the spare port.
-          command: `npm run build --silent 2>/dev/null; NODE_ENV=production PORT=${String(PORT)} node dist/index.js`,
+          // CI builds in its own step, so it only starts the server. Locally we
+          // always rebuild first, and a failed build stops the run, so the
+          // suite can never pass against a stale dist/.
+          command: `${process.env.CI === undefined ? 'npm run build && ' : ''}NODE_ENV=production PORT=${String(PORT)} node dist/index.js`,
           url: `${BASE_URL}/api/health`,
           reuseExistingServer: process.env.CI === undefined,
           timeout: 180_000,

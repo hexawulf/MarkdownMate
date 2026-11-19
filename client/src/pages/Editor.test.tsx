@@ -58,10 +58,13 @@ describe("MM-01: empty document list recovers", () => {
     render(<Editor />);
     await waitFor(() => expect(screen.getByTestId("split-view")).toBeInTheDocument());
 
-    // Hard-delete the only document and clear the current selection, as a
-    // delete-the-last-doc flow ends up.
-    const { documents, deleteDocument, setCurrentDocument } = useDocumentsStore.getState();
-    await deleteDocument(documents[0].id);
+    // Hard-delete the open (only) document and clear the current selection, as
+    // a delete-the-last-doc flow ends up. Use currentDocument, not documents[0]:
+    // async work left over from the previous test can still rewrite the list
+    // and made this test flaky (~25% when run with its siblings).
+    const { currentDocument, deleteDocument, setCurrentDocument } = useDocumentsStore.getState();
+    expect(currentDocument).not.toBeNull();
+    await deleteDocument(currentDocument!.id);
     setCurrentDocument(null);
 
     // The page must offer a way forward (auto-create fires, or the empty-state
