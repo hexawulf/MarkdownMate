@@ -11,6 +11,7 @@ import { exportAsMarkdown, exportAsHtml, exportAsPdf } from '@/lib/export';
 import { exportAllDocuments, readImportFiles, ensurePersistentStorage } from '@/lib/backup';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -28,6 +29,29 @@ import { useTheme } from '@/hooks/useTheme';
 import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
 import { AboutModal } from '@/modules/about';
 
+// Sync scroll is on by default and remembered per browser. localStorage can be
+// unavailable (private mode, blocked storage), so every access is guarded and
+// falls back to the default.
+const SYNC_SCROLL_KEY = 'markdownmate:syncScroll';
+
+function readSyncScroll(): boolean {
+  try {
+    const v = localStorage.getItem(SYNC_SCROLL_KEY);
+    if (v === null) return true;
+    return v !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+function writeSyncScroll(value: boolean): void {
+  try {
+    localStorage.setItem(SYNC_SCROLL_KEY, value ? 'true' : 'false');
+  } catch {
+    // Ignore: a blocked localStorage just means the setting is not persisted.
+  }
+}
+
 export default function Editor() {
   const { documents, loadDocuments, createDocument, currentDocument, setCurrentDocument, hasLoadedInitialDocuments, getDocument, dbBlocked } = useDocumentsStore();
   const [content, setContent] = useState('');
@@ -41,6 +65,11 @@ export default function Editor() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
+  const [syncScroll, setSyncScroll] = useState(readSyncScroll);
+  const handleSyncScrollChange = useCallback((value: boolean) => {
+    setSyncScroll(value);
+    writeSyncScroll(value);
+  }, []);
   // MM-02: set when another tab changed the open document while this tab has an
   // unsaved edit. Autosave is paused until the user chooses.
   const [externalChange, setExternalChange] = useState(false);
@@ -352,9 +381,21 @@ export default function Editor() {
                 />
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setWordWrap(!wordWrap)}>
-                {wordWrap ? '✓' : '  '} Word Wrap
-              </DropdownMenuItem>
+              <DropdownMenuCheckboxItem
+                checked={wordWrap}
+                onCheckedChange={setWordWrap}
+              >
+                Word Wrap
+              </DropdownMenuCheckboxItem>
+              {/* Sync scroll only matters in split view, which is not offered
+                  below md; hide the toggle there. */}
+              <DropdownMenuCheckboxItem
+                checked={syncScroll}
+                onCheckedChange={handleSyncScrollChange}
+                className="hidden md:flex"
+              >
+                Sync Scroll
+              </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -453,6 +494,7 @@ export default function Editor() {
             onCursorChange={(line, column) => setCursorPosition({ line, column })}
             fontSize={fontSize}
             wordWrap={wordWrap}
+            syncScroll={syncScroll}
           />
           
           <StatusBar

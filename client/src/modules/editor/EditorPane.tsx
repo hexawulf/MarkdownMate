@@ -114,6 +114,8 @@ interface EditorPaneProps {
   value: string;
   onChange: (value: string) => void;
   onCursorChange?: (line: number, column: number) => void;
+  /** Called once Monaco has mounted, with the editor instance (for sync scroll). */
+  onEditorReady?: (editor: editor.IStandaloneCodeEditor) => void;
   fontSize?: number;
   wordWrap?: boolean;
 }
@@ -122,6 +124,7 @@ export function EditorPane({
   value, 
   onChange, 
   onCursorChange,
+  onEditorReady,
   fontSize = 14,
   wordWrap = true,
 }: EditorPaneProps) {
@@ -130,6 +133,7 @@ export function EditorPane({
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
+    onEditorReady?.(editor);
 
     // Track cursor position
     editor.onDidChangeCursorPosition((e) => {

@@ -1,6 +1,8 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
+import type { editor } from 'monaco-editor';
 import { PreviewPane } from './PreviewPane';
 import { Button } from '@/components/ui/button';
+import { useSyncScroll } from '@/hooks/useSyncScroll';
 import { Code, Eye, Columns } from 'lucide-react';
 
 // Monaco is by far the largest part of the app. Loading it as its own chunk
@@ -27,6 +29,7 @@ interface SplitViewProps {
   onCursorChange?: (line: number, column: number) => void;
   fontSize?: number;
   wordWrap?: boolean;
+  syncScroll?: boolean;
 }
 
 export function SplitView({
@@ -37,17 +40,31 @@ export function SplitView({
   onCursorChange,
   fontSize = 14,
   wordWrap = true,
+  syncScroll = true,
 }: SplitViewProps) {
   // MM-06: there is a single EditorPane (one Monaco instance) that is never
   // unmounted while switching between Editor, Split and Preview. The layout
   // around it changes and panes are shown/hidden with CSS, so Monaco's undo
   // history survives view switches.
+  const [editorInstance, setEditorInstance] = useState<editor.IStandaloneCodeEditor | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // Sync scroll is live only in split view, when both panes have a real layout.
+  // The editor instance is kept across view switches (it is never remounted),
+  // so turning sync back on realigns the preview to the editor immediately.
+  useSyncScroll({
+    editor: editorInstance,
+    previewRef,
+    enabled: syncScroll && viewMode === 'split',
+  });
+
   const editor = (
     <Suspense fallback={<EditorFallback />}>
       <EditorPane
         value={content}
         onChange={onChange}
         onCursorChange={onCursorChange}
+        onEditorReady={setEditorInstance}
         fontSize={fontSize}
         wordWrap={wordWrap}
       />
@@ -114,7 +131,7 @@ export function SplitView({
                   : 'h-full w-full'
             }
           >
-            <PreviewPane markdown={content} />
+            <PreviewPane ref={previewRef} markdown={content} />
           </div>
         </div>
       </div>

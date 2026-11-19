@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { markdownToHtml } from '@/lib/markdown';
 import 'katex/dist/katex.min.css';
 import 'prismjs/themes/prism-tomorrow.css';
@@ -12,7 +12,12 @@ interface PreviewPaneProps {
 // so wait for a short pause in typing instead of rendering on every keystroke.
 const RENDER_DEBOUNCE_MS = 150;
 
-export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
+// forwardRef exposes the scroll container (the outer div) so SplitView can wire
+// it into the sync-scroll hook.
+export const PreviewPane = forwardRef<HTMLDivElement, PreviewPaneProps>(function PreviewPane(
+  { markdown, className = '' },
+  ref,
+) {
   const [html, setHtml] = useState<string | null>(null);
   const hasRendered = useRef(false);
 
@@ -44,7 +49,7 @@ export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
   }, [markdown]);
 
   return (
-    <div className={`h-full w-full overflow-y-auto bg-background ${className}`}>
+    <div ref={ref} className={`h-full w-full overflow-y-auto bg-background ${className}`}>
       <div className="max-w-4xl mx-auto p-8">
         {html === null && (
           <div className="flex items-center justify-center py-8">
@@ -61,4 +66,4 @@ export function PreviewPane({ markdown, className = '' }: PreviewPaneProps) {
       </div>
     </div>
   );
-}
+});
