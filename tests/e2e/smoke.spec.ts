@@ -34,15 +34,25 @@ const LIVE = process.env.MARKDOWNMATE_BASE_URL !== undefined
  * of substrings for messages that are known and explained.
  */
 function watchForProblems(page: Page, allow: RegExp[] = []): () => void {
+  // On live (markdownmate.org, behind Cloudflare), Cloudflare injects its
+  // analytics beacon (static.cloudflareinsights.com/beacon.min.js) at the edge.
+  // The app's strict `script-src 'self'` CSP correctly blocks it, which logs a
+  // CSP-violation console error on every live page. That is an edge artifact,
+  // not an app defect — the CSP is doing its job — so it is allowed for the
+  // @live run only. The local production server never serves it, so the local
+  // run stays strict and would still catch a real CSP break.
+  const allowList = LIVE
+    ? [...allow, /cloudflareinsights\.com\/beacon(\.min)?\.js/i]
+    : allow
   const problems: string[] = []
   page.on('console', (message) => {
     if (message.type() !== 'error') return
     const text = message.text()
-    if (allow.some((re) => re.test(text))) return
+    if (allowList.some((re) => re.test(text))) return
     problems.push(`console: ${text}`)
   })
   page.on('pageerror', (error) => {
-    if (allow.some((re) => re.test(error.message))) return
+    if (allowList.some((re) => re.test(error.message))) return
     problems.push(`pageerror: ${error.message}`)
   })
   return () => expect(problems, 'no uncaught page or console errors').toEqual([])
