@@ -21,11 +21,13 @@ npm run check        # TypeScript type check (tsc)
 npm run lint         # ESLint (flat config)
 npm test             # Vitest (node + jsdom, fake-indexeddb)
 npm run test:coverage
+npm run test:e2e     # Playwright smoke test against the production build
 npm run build        # clean dist, build the client, bundle the server
 npm start            # production: node dist/index.js
 ```
 
-CI runs check, lint, test and build. There is no `db:push` and no migrations.
+CI runs check, lint, test, build and the Playwright e2e smoke test. There is no
+`db:push` and no migrations.
 
 ## Where things live
 
@@ -65,8 +67,12 @@ server/
 ## Pre-PR checks
 
 ```bash
-npm run check && npm run lint && npm test && npm run build
+npm run check && npm run lint && npm test && npm run build && npm run test:e2e
 ```
+
+The Playwright e2e suite lives in `tests/e2e/` and drives the production build
+(`node dist/index.js`) on port 5098. Vitest does not pick it up (its `include`
+is scoped to `client/src` and `server`); `tsc` and ESLint do cover it.
 
 Module details: see [client/AGENTS.md](client/AGENTS.md) and
 [server/AGENTS.md](server/AGENTS.md). Older planning notes are in `docs/archive/`.

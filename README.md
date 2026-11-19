@@ -26,6 +26,7 @@
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Quick start](#quick-start)
 - [Scripts](#scripts)
+- [Testing](#testing)
 - [Project layout](#project-layout)
 - [Deployment](#deployment)
 - [Privacy and security](#privacy-and-security)
@@ -122,12 +123,47 @@ Configuration is small. Copy `.env.example` to `.env` if you want to change it (
 | `npm test`              | Run the Vitest suite once                                 |
 | `npm run test:watch`    | Run Vitest in watch mode                                  |
 | `npm run test:coverage` | Run the tests with V8 coverage                            |
+| `npm run test:e2e`      | Playwright browser smoke test against the production build |
+| `npm run test:e2e:live` | Run only the read-only `@live` tests against markdownmate.org |
 | `npm run lint`          | ESLint                                                    |
 | `npm run lint:fix`      | ESLint with automatic fixes                               |
 | `npm run typecheck`     | TypeScript check (`tsc --noEmit`)                         |
 | `npm run metrics:all`   | Measure bundle, Monaco, preview and IndexedDB performance |
 
-CI (GitHub Actions, Node 22) runs type check, lint, tests and build on pushes to `main` and on pull requests.
+CI (GitHub Actions, Node 22) runs type check, lint, unit tests, build and the
+Playwright browser smoke test on pushes to `main` and on pull requests.
+
+## Testing
+
+Two layers:
+
+- **Unit tests** — Vitest with `fake-indexeddb` and React Testing Library, for
+  the store, the IndexedDB migration, autosave, the markdown pipeline, the zip
+  backup and the server routes/headers. Run `npm test`.
+- **End-to-end** — a Playwright smoke test (headless Chromium) that drives the
+  **production build** (`node dist/index.js`), so it covers the parts no unit
+  test can: rendering under the real helmet CSP, the KaTeX + Prism output,
+  IndexedDB persistence across a reload, the trash, the zip backup round-trip,
+  two-tab `BroadcastChannel` sync and the schema-upgrade handling.
+
+Run the e2e suite locally (it builds and starts the server for you):
+
+```bash
+npm run test:e2e
+```
+
+First run only, to fetch the pinned browser:
+
+```bash
+npx playwright install chromium
+```
+
+A small read-only subset is tagged `@live` (load, render, headers) and can run
+against the deployed site without writing any document:
+
+```bash
+npm run test:e2e:live   # targets https://markdownmate.org
+```
 
 ## Project layout
 
