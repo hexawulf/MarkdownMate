@@ -511,6 +511,47 @@ test('9b. no horizontal scroll at 390x844', async ({ browser }) => {
   await ctx.close()
 })
 
+test('9d. a very long unbroken title does not stretch the sidebar or hide the ⋯ button', async ({
+  page,
+}) => {
+  // From #51: a long, space-less title used to stretch the Radix ScrollArea and
+  // push the row's ⋯ menu button out of view. The current sidebar truncates
+  // (min-w-0 + truncate); this guards that it stays so.
+  const assertClean = watchForProblems(page)
+  await page.goto('/')
+  await waitForEditor(page)
+
+  const longTitle = 'x'.repeat(120) // 120 chars, no spaces
+  await renameFirstDoc(page, 'Untitled Document', longTitle)
+
+  const sidebar = page.locator('#documents-panel')
+  // The sidebar keeps its 256px (w-64) width; a long title must not widen it.
+  const width = await sidebar.evaluate((el) => el.getBoundingClientRect().width)
+  expect(width, 'sidebar stays at ~256px').toBeLessThanOrEqual(272)
+
+  // The row's ⋯ menu button is present and clickable (hover reveals it).
+  const row = page.locator('.group', { hasText: longTitle }).first()
+  await row.scrollIntoViewIfNeeded()
+  await row.hover()
+  const trigger = row.getByRole('button')
+  await expect(trigger).toBeVisible()
+  const box = await trigger.boundingBox()
+  const sb = await sidebar.boundingBox()
+  expect(box, 'the ⋯ button has a box').toBeTruthy()
+  expect(sb, 'the sidebar has a box').toBeTruthy()
+  if (box && sb) {
+    // The button sits within the sidebar's right edge, not pushed off-screen.
+    expect(box.x + box.width).toBeLessThanOrEqual(sb.x + sb.width + 1)
+  }
+  // And it actually opens its menu.
+  await trigger.click()
+  await expect(page.getByRole('menuitem', { name: 'Rename', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+
+  assertClean()
+})
+
 test('9c. at 390x844 the Documents panel opens, switches documents and closes', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
   const page = await ctx.newPage()

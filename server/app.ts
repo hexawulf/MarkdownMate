@@ -16,13 +16,29 @@ export function createApp({ onApiRequest }: CreateAppOptions = {}): Express {
 
   app.disable("x-powered-by");
 
+  // Dev only: @vitejs/plugin-react injects an inline react-refresh preamble
+  // that the strict `script-src 'self'` blocks, so the app will not boot under
+  // `npm run dev`. Allow exactly that one inline script by its sha256 hash
+  // (tighter than 'unsafe-inline'), and ONLY when NODE_ENV is exactly
+  // "development" — any other value (including unset) FAILS CLOSED to the strict
+  // production policy the e2e header tests assert. Production is never affected.
+  //
+  // The hash is the preamble @vitejs/plugin-react emits; it is stable for a
+  // given plugin version. If a plugin upgrade changes the preamble, the dev
+  // console prints the new expected sha256 in the CSP-violation message — copy
+  // it here. This list is dev-only, so it cannot weaken production.
+  const isDev = process.env.NODE_ENV === "development";
+  const devScriptSrc = isDev
+    ? ["'self'", "'sha256-Z2/iFzh9VMlVkEOar1f/oSHWwQk3ve1qk/C2WdsC4Xk='"]
+    : ["'self'"];
+
   // Security headers with helmet - strict local-only CSP
   app.use(helmet({
     contentSecurityPolicy: {
       useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],                    // no remote scripts, no eval
+        scriptSrc: devScriptSrc,                  // prod: no remote scripts, no eval
         styleSrc: ["'self'", "'unsafe-inline'"],  // allow inline for Monaco/print CSS
         imgSrc: ["'self'", "data:", "blob:", "https:"], // MM-03: allow remote images over https (http stays blocked)
         fontSrc: ["'self'", "data:"],             // allow data URLs for fonts
