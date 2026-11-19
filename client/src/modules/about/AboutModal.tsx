@@ -15,7 +15,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const APP_VERSION = '3.2.1';
+const APP_VERSION = '3.3.0';
 const RELEASE_DATE = 'November 2026';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
@@ -69,13 +69,11 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
 
           {/* What's new */}
           <section>
-            <h3 className="font-semibold mb-2">What&apos;s new in 3.2.0</h3>
+            <h3 className="font-semibold mb-2">What&apos;s new in 3.3.0</h3>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• <strong>Trash</strong> — deleted documents can be restored for 30 days</li>
-              <li>• <strong>Export all / Import</strong> — back up every document as a .zip</li>
-              <li>• <strong>Two tabs stay in sync</strong> — with a warning if both have edits</li>
-              <li>• <strong>Undo survives</strong> switching between Editor, Split and Preview</li>
-              <li>• <strong>Remote images</strong> (https) now show in the preview</li>
+              <li>• <strong>Sidebar stays in sync</strong> — documents created, renamed or deleted in another tab show up without a reload</li>
+              <li>• <strong>KaTeX 0.19</strong> — the latest math renderer, with its security fixes</li>
+              <li>• <strong>Tested in a real browser</strong> — every change now runs a browser smoke test before release</li>
             </ul>
           </section>
 

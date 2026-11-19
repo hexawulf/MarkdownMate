@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Target: 3.3.0.
+## [3.3.0] - 2026-11-19
 
 ### Added
 - A Playwright browser smoke test (headless Chromium) that drives the
@@ -21,7 +21,14 @@ Target: 3.3.0.
   production `npm audit` findings (GHSA-238p-pmpm-9mq7). Math rendering, the
   `trust`-off default and the CSS/font loading are unchanged.
 - A document created, renamed or deleted in another tab now appears in this
-  tab's sidebar without a reload.
+  tab's sidebar without a reload. A tab ignores its own broadcasts, so it does
+  not rescan the database after each local autosave.
+- The e2e server rebuilds before a local run and stops on a failed build, so the
+  suite never runs against a stale `dist/`. CI uses its own build step.
+
+### Fixed
+- A flaky Editor unit test (about 1 run in 4 when run with its siblings) that
+  read a document list a previous test could still rewrite.
 
 ## [3.2.1] - 2026-11-18
 
