@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-11-19
+
+### Fixed
+- Phone layout (MM-12): below 768 px the document list is a slide-over panel
+  opened from a new "Documents" button in the header (Escape or a tap outside
+  closes it), and the Settings/Export buttons show icons only. The page no
+  longer scrolls sideways at 390 px.
+- Security headers (MM-09): the piapps nginx vhost no longer adds its own
+  X-Frame-Options, X-Content-Type-Options and X-XSS-Protection on top of the
+  app's, so each is sent once, and X-XSS-Protection is the app's `0` instead of
+  two conflicting values. The e2e header test now checks all three.
+
+### Security
+- `@tailwindcss/typography` pins `postcss-selector-parser` 6.0.10
+  (GHSA-rj75-hqrm-r3gf, moderate, build time only). An npm override lifts it to
+  6.1.6, which Tailwind already uses. The generated `prose` CSS is unchanged.
+  `npm audit` now reports 0 findings, including dev dependencies.
+
 ## [3.3.0] - 2026-11-19
 
 ### Added
