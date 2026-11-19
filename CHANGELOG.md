@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-11-19
+
 ### Added
 - Sync scroll between the editor and the preview in Split view, in both
   directions (based on PR #51 by @AdelinoGP). The preview stamps
