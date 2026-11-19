@@ -37,9 +37,13 @@ client/src/
   stores/useDocumentsStore.ts   # Zustand store over IndexedDB (markdownmate-db, v2)
   hooks/useAutosave.ts          # debounced per-document autosave
   lib/autosave.ts               # autosave controller (pure, tested)
-  lib/markdown.ts               # unified pipeline (sanitize -> KaTeX -> Prism)
-  lib/export.ts                 # single-document .md / .html / print export
+  lib/markdown.ts               # unified pipeline (sanitize -> KaTeX -> Prism); markdownToHtml({ sourceLines })
+  lib/markdownProcessor.ts      # processor factory; { sourceLines } adds data-source-line anchors
+  lib/rehypeSourceLines.ts      # rehype passes stamping data-source-line on top-level blocks
+  lib/syncScrollMath.ts         # pure line<->offset maths for sync scroll (no Monaco)
+  lib/export.ts                 # single-document .md / .html / print export (no anchors)
   lib/backup.ts                 # Export all / Import (.zip) + storage.persist()
+  hooks/useSyncScroll.ts        # Monaco <-> preview lock-step scroll in Split view
   modules/editor/               # SplitView, EditorPane (Monaco), PreviewPane, StatusBar
   modules/about/                # About dialog
   components/DocumentsSidebar.tsx  # list, rename, duplicate, delete, trash
@@ -62,7 +66,13 @@ server/
   every existing document, covered by a `fake-indexeddb` migration test.
 - The CSP in `server/app.ts` is strict and local-first; `img-src` additionally
   allows `https:` so remote images render in the preview. Do not widen it further
-  without a reason.
+  without a reason. A dev-only `script-src` sha256 hash (the vite react-refresh
+  preamble) is added **only** when `NODE_ENV === 'development'` and fails closed
+  to strict otherwise.
+- The preview renders with `markdownToHtml(md, { sourceLines: true })` so sync
+  scroll has `data-source-line` anchors; the HTML export uses the default (no
+  anchors). Keep Monaco a single instance (MM-06); sync scroll wires it via
+  `onEditorReady` without remounting.
 
 ## Pre-PR checks
 

@@ -31,7 +31,10 @@ server/
   `server/static.test.ts` (fetches the built server, checks routes, CSP and
   cache headers).
 - The CSP (in `app.ts`) is strict and local-first. `img-src` allows `https:` so
-  remote images render; `http:` stays blocked. Change it only with a reason.
+  remote images render; `http:` stays blocked. A dev-only `script-src` sha256
+  hash (the vite react-refresh preamble) is added **only** when
+  `NODE_ENV === 'development'` and fails closed to strict `script-src 'self'`
+  otherwise (`server/app.test.ts` guards this). Change it only with a reason.
 - Routes: `GET /api/health` returns `{ status: "ok" }`. Unknown non-asset paths
   fall back to the SPA; unknown API paths return a JSON 404.
 - Production is started by pm2 from `ecosystem.config.cjs`, which runs

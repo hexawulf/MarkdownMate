@@ -15,7 +15,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const APP_VERSION = '3.3.1';
+const APP_VERSION = '3.4.0';
 const RELEASE_DATE = 'November 2026';
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
@@ -69,8 +69,9 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
 
           {/* What's new */}
           <section>
-            <h3 className="font-semibold mb-2">What&apos;s new in 3.3</h3>
+            <h3 className="font-semibold mb-2">What&apos;s new in 3.4</h3>
             <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• <strong>Sync scroll</strong> — in Split view the preview follows the editor line by line, and back (toggle in Settings)</li>
               <li>• <strong>Works on phones</strong> — the document list opens as a panel from the header</li>
               <li>• <strong>Sidebar stays in sync</strong> — documents created, renamed or deleted in another tab show up without a reload</li>
               <li>• <strong>KaTeX 0.19</strong> — the latest math renderer, with its security fixes</li>

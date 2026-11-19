@@ -20,9 +20,13 @@ client/src/
   pages/Editor.tsx              # the editor page (loading/empty-state, autosave, cross-tab sync)
   stores/useDocumentsStore.ts   # Zustand + IndexedDB (idb); CRUD, soft-delete/trash, broadcast
   hooks/useAutosave.ts          # debounced autosave hook (pause + flush)
+  hooks/useSyncScroll.ts        # Monaco <-> preview lock-step scroll (Split view only)
   lib/autosave.ts               # pure autosave controller
-  lib/markdown.ts               # unified: sanitize before KaTeX/Prism
-  lib/export.ts                 # per-document export; safeFileName()
+  lib/markdown.ts               # unified: sanitize before KaTeX/Prism; markdownToHtml({ sourceLines })
+  lib/markdownProcessor.ts      # processor factory; { sourceLines } stamps data-source-line
+  lib/rehypeSourceLines.ts      # rehype passes: data-source-line on top-level blocks
+  lib/syncScrollMath.ts         # pure line<->offset maths for sync scroll (tested, no Monaco)
+  lib/export.ts                 # per-document export; safeFileName() (no anchors)
   lib/backup.ts                 # Export all / Import (JSZip, dynamic import) + persist()
   modules/editor/SplitView.tsx  # one Monaco + one preview; view mode changes layout only
   modules/editor/EditorPane.tsx # Monaco wrapper (automaticLayout)
@@ -57,6 +61,12 @@ client/src/
 ## Gotchas
 
 - Monaco is heavy and lazy-loaded; keep a single instance (SplitView) so undo
-  history survives view switches.
+  history survives view switches. Sync scroll (`useSyncScroll`) reads the Monaco
+  instance through `EditorPane`'s `onEditorReady` callback and the preview's
+  scroll container via a forwarded ref — it must not cause a remount.
+- The preview renders with `markdownToHtml(md, { sourceLines: true })` so
+  `data-source-line` anchors exist for sync scroll; the HTML export uses the
+  default call (no anchors). Pure mapping maths live in `lib/syncScrollMath.ts`
+  and stay free of Monaco so they can be unit-tested.
 - Any IndexedDB schema change is a versioned upgrade with a migration test that
   proves no document is lost.

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-11-19
+
+### Added
+- Sync scroll between the editor and the preview in Split view, in both
+  directions (based on PR #51 by @AdelinoGP). The preview stamps
+  `data-source-line` anchors on its top-level blocks, so the two panes track by
+  source line rather than a plain scroll ratio, which stays accurate when blocks
+  have different heights (images, tables, math, long code). A "Sync Scroll"
+  toggle in Settings turns it on or off; it is on by default and remembered per
+  browser. The exported HTML never contains the anchors.
+
+### Fixed
+- Windows path resolution in `vite.config.ts` (from PR #51): use `fileURLToPath`
+  instead of `new URL(import.meta.url).pathname`, which produced `/D:/…` paths
+  on Windows and broke the build and dev server. Linux and macOS are unchanged;
+  `outDir` stays `dist/public`.
+- Development-mode CSP (from PR #51): `script-src 'self'` blocked the inline
+  react-refresh preamble `@vitejs/plugin-react` injects, so the app did not load
+  under `npm run dev`. The preamble is now allowed by its sha256 hash, only when
+  `NODE_ENV` is exactly `development`. Production (and any unset or other value)
+  keeps the strict `script-src 'self'`.
+
 ## [3.3.1] - 2026-11-19
 
 ### Fixed
