@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Download, Settings, Moon, Sun, HelpCircle, Info } from 'lucide-react';
+import { Download, Settings, Moon, Sun, HelpCircle, Info, PanelLeft } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
 import { AboutModal } from '@/modules/about';
@@ -37,6 +37,8 @@ export default function Editor() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
+  // MM-12: below the md breakpoint the sidebar is a slide-over panel.
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(true);
   // MM-02: set when another tab changed the open document while this tab has an
@@ -54,6 +56,16 @@ export default function Editor() {
     setLastSaved(doc.updatedAt);
     setHasUnsavedChanges(false);
   }, [setCurrentDocument, currentDocument]);
+
+  // Escape closes the mobile documents panel.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sidebarOpen]);
 
   // Load documents on mount
   useEffect(() => {
@@ -285,10 +297,23 @@ export default function Editor() {
   return (
     <div className="flex h-screen flex-col">
       {/* Top toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-background">
-        <h1 className="text-xl font-bold tracking-tight">MarkdownMate</h1>
-        
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 px-2 sm:px-4 py-2 border-b bg-background">
+        <div className="flex items-center gap-1 min-w-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setSidebarOpen((open) => !open)}
+            aria-label="Documents"
+            aria-expanded={sidebarOpen}
+            aria-controls="documents-panel"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">MarkdownMate</h1>
+        </div>
+
+        <div className="flex items-center gap-0 sm:gap-2 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
@@ -309,9 +334,9 @@ export default function Editor() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
+              <Button variant="ghost" size="sm" aria-label="Settings">
+                <Settings className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Settings</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -335,9 +360,9 @@ export default function Editor() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
+              <Button variant="ghost" size="sm" aria-label="Export">
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -361,7 +386,7 @@ export default function Editor() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="sm" onClick={() => setHelpDialogOpen(true)}>
+          <Button variant="ghost" size="sm" onClick={() => setHelpDialogOpen(true)} aria-label="Help">
             <HelpCircle className="h-4 w-4" />
           </Button>
         </div>
@@ -379,16 +404,34 @@ export default function Editor() {
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-64 flex-shrink-0">
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+        <div
+          id="documents-panel"
+          className={`${
+            sidebarOpen ? 'fixed inset-y-0 left-0 z-40 shadow-lg' : 'hidden'
+          } w-64 max-w-[85vw] bg-background md:static md:z-auto md:block md:flex-shrink-0 md:shadow-none`}
+        >
           <DocumentsSidebar
             currentDocumentId={currentDocument.id}
-            onSelectDocument={handleSelectDocument}
-            onCreateDocument={handleCreateDocument}
+            onSelectDocument={(doc) => {
+              handleSelectDocument(doc);
+              setSidebarOpen(false);
+            }}
+            onCreateDocument={async () => {
+              await handleCreateDocument();
+              setSidebarOpen(false);
+            }}
             onBeforeMutate={saveNow}
           />
         </div>
-        
-        <div className="flex-1 flex flex-col">
+
+        <div className="flex-1 flex flex-col min-w-0">
           {externalChange && (
             <div className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100 text-sm">
               <span>Changed in another tab.</span>

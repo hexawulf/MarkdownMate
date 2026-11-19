@@ -496,13 +496,8 @@ test('9. the editor and view toggle are usable at 390x844', async ({ browser }) 
 })
 
 test('9b. no horizontal scroll at 390x844', async ({ browser }) => {
-  // MM-12 (new this round): the sidebar is a fixed 256px (`w-64 flex-shrink-0`)
-  // and does not collapse, so at 390px the layout is ~161px wider than the
-  // viewport. Marked as an expected failure so the suite stays green today and
-  // turns red the moment the layout is made responsive — the same pattern the
-  // X-Frame-Options check uses for MM-09.
-  test.fail(true, 'MM-12: fixed 256px sidebar overflows at 390px width')
-
+  // MM-12 (fixed in 3.3.1): below the md breakpoint the sidebar is a
+  // slide-over panel, so nothing is wider than the viewport.
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
   const page = await ctx.newPage()
   await page.goto('/')
@@ -513,5 +508,39 @@ test('9b. no horizontal scroll at 390x844', async ({ browser }) => {
   )
   expect(overflow).toBeLessThanOrEqual(1)
 
+  await ctx.close()
+})
+
+test('9c. at 390x844 the Documents panel opens, switches documents and closes', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const page = await ctx.newPage()
+  const assertClean = watchForProblems(page)
+
+  await page.goto('/')
+  await waitForEditor(page)
+
+  const panel = page.locator('#documents-panel')
+  const toggle = page.getByRole('button', { name: 'Documents' })
+  await expect(panel).toBeHidden()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  // Open the panel and create a second document from it; the panel closes.
+  await toggle.click()
+  await expect(panel).toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await panel.getByRole('button', { name: 'New' }).first().click()
+  await expect(panel).toBeHidden()
+
+  // Escape closes an open panel, and the page never scrolls sideways.
+  await toggle.click()
+  await expect(panel).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+  expect(overflow).toBeLessThanOrEqual(1)
+
+  assertClean()
   await ctx.close()
 })
