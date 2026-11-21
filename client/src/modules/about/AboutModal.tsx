@@ -167,6 +167,20 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
             </ul>
           </section>
 
+          {/* Developer */}
+          <section>
+            <h3 className="font-semibold mb-2">Developer</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Erling Wulf Weinreich (0xWulf) ·{' '}
+              <a
+                href="mailto:dev@0xwulf.dev"
+                className="underline hover:text-foreground"
+              >
+                dev@0xwulf.dev
+              </a>
+            </p>
+          </section>
+
           {/* Footer */}
           <section className="pt-4 border-t text-center">
             <p className="text-sm text-muted-foreground">
