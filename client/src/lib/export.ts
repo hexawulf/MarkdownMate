@@ -79,7 +79,7 @@ export function buildHtmlDocument(title: string, html: string, katexVersion: str
     p { margin-bottom: 1em; }
     
     a {
-      color: #0066cc;
+      color: #0d9488;
       text-decoration: none;
     }
     
@@ -165,7 +165,7 @@ export function buildHtmlDocument(title: string, html: string, katexVersion: str
     .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #6e7781; font-style: italic; }
     .token.punctuation { color: #57606a; }
     .token.property, .token.tag, .token.constant, .token.symbol, .token.deleted { color: #116329; }
-    .token.boolean, .token.number { color: #0550ae; }
+    .token.boolean, .token.number { color: #0d9488; }
     .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #0a3069; }
     .token.operator, .token.entity, .token.url { color: #57606a; }
     .token.atrule, .token.attr-value, .token.keyword { color: #cf222e; }

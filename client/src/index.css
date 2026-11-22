@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  /* Minimal White/Black GitHub-style */
+  /* Minimal White/Black GitHub-style with 0xWulf Teal accents */
   --background: 255 255 255; /* #FFFFFF */
   --foreground: 36 41 47; /* #24292f - charcoal */
   --muted: 246 248 250; /* #f6f8fa - light gray surface */
@@ -16,7 +16,7 @@
   --card-foreground: 36 41 47; /* #24292f */
   --border: 208 215 222; /* #d0d7de - soft light gray */
   --input: 208 215 222; /* #d0d7de */
-  --primary: 9 105 218; /* #0969da - github blue */
+  --primary: 13 148 136; /* #0d9488 - teal-600 */
   --primary-foreground: 255 255 255; /* white */
   --secondary: 246 248 250; /* #f6f8fa */
   --secondary-foreground: 36 41 47; /* #24292f */
@@ -24,19 +24,19 @@
   --accent-foreground: 36 41 47; /* #24292f */
   --destructive: 207 34 46; /* #cf222e - red */
   --destructive-foreground: 255 255 255; /* white */
-  --ring: 9 105 218; /* #0969da */
+  --ring: 13 148 136; /* #0d9488 - teal-600 */
   --radius: 0.375rem; /* 6px - crisp */
 
   --sidebar-background: 246 248 250; /* #f6f8fa */
   --sidebar-foreground: 36 41 47; /* #24292f */
-  --sidebar-primary: 9 105 218; /* #0969da */
+  --sidebar-primary: 13 148 136; /* #0d9488 */
   --sidebar-primary-foreground: 255 255 255; /* white */
   --sidebar-accent: 234 238 242; /* #eaeef2 */
   --sidebar-accent-foreground: 36 41 47; /* #24292f */
   --sidebar-border: 208 215 222; /* #d0d7de */
-  --sidebar-ring: 9 105 218; /* #0969da */
+  --sidebar-ring: 13 148 136; /* #0d9488 */
 
-  --chart-1: 9 105 218; /* #0969da - blue */
+  --chart-1: 13 148 136; /* #0d9488 - teal */
   --chart-2: 31 136 61; /* #1f883d - green */
   --chart-3: 207 34 46; /* #cf222e - red */
   --chart-4: 130 80 223; /* #8250df - purple */
@@ -48,17 +48,17 @@
   --dt-ink: #24292f;
   --dt-ink-muted: #57606a;
   --dt-border: #d0d7de;
-  --dt-gold: #0969da; /* Repurposing gold to blue for primary accents */
-  --dt-gold-hover: #0550ae;
-  --dt-brown: #0969da; /* Repurposing brown to blue for links */
+  --dt-gold: #0d9488; /* Teal primary accent */
+  --dt-gold-hover: #0f766e;
+  --dt-brown: #0d9488; /* Teal link color */
   --dt-seal-red: #cf222e;
   --dt-seal-hover: #a40e26;
-  --dt-selection: #b6e3ff;
+  --dt-selection: #99f6e4;
   --dt-selection-fg: #24292f;
 }
 
 .dark {
-  /* Minimal Dark GitHub-style */
+  /* Minimal Dark GitHub-style with 0xWulf Teal accents */
   --background: 13 17 23; /* #0d1117 - dark */
   --foreground: 201 209 217; /* #c9d1d9 - light gray text */
   --muted: 22 27 34; /* #161b22 - dark surface */
@@ -69,7 +69,7 @@
   --card-foreground: 201 209 217; /* #c9d1d9 */
   --border: 48 54 61; /* #30363d - subtle dark border */
   --input: 48 54 61; /* #30363d */
-  --primary: 47 129 247; /* #2f81f7 - light blue */
+  --primary: 20 184 166; /* #14b8a6 - teal-500 */
   --primary-foreground: 255 255 255; /* #ffffff */
   --secondary: 22 27 34; /* #161b22 */
   --secondary-foreground: 139 148 158; /* #8b949e */
@@ -77,18 +77,18 @@
   --accent-foreground: 201 209 217; /* #c9d1d9 */
   --destructive: 248 81 73; /* #f85149 - red */
   --destructive-foreground: 255 255 255; /* #ffffff */
-  --ring: 47 129 247; /* #2f81f7 */
+  --ring: 20 184 166; /* #14b8a6 - teal-500 */
 
   --sidebar-background: 22 27 34; /* #161b22 */
   --sidebar-foreground: 201 209 217; /* #c9d1d9 */
-  --sidebar-primary: 47 129 247; /* #2f81f7 */
+  --sidebar-primary: 20 184 166; /* #14b8a6 */
   --sidebar-primary-foreground: 255 255 255; /* #ffffff */
   --sidebar-accent: 33 38 45; /* #21262d */
   --sidebar-accent-foreground: 201 209 217; /* #c9d1d9 */
   --sidebar-border: 48 54 61; /* #30363d */
-  --sidebar-ring: 47 129 247; /* #2f81f7 */
+  --sidebar-ring: 20 184 166; /* #14b8a6 */
 
-  --chart-1: 47 129 247; /* #2f81f7 - blue */
+  --chart-1: 20 184 166; /* #14b8a6 - teal */
   --chart-2: 46 160 67; /* #2ea043 - green */
   --chart-3: 248 81 73; /* #f85149 - red */
   --chart-4: 163 113 247; /* #a371f7 - purple */
@@ -100,12 +100,12 @@
   --dt-ink: #c9d1d9;
   --dt-ink-muted: #8b949e;
   --dt-border: #30363d;
-  --dt-gold: #2f81f7;
-  --dt-gold-hover: #58a6ff;
-  --dt-brown: #2f81f7;
+  --dt-gold: #14b8a6;
+  --dt-gold-hover: #5eead4;
+  --dt-brown: #2dd4bf;
   --dt-seal-red: #f85149;
   --dt-seal-hover: #ff7b72;
-  --dt-selection: #1f4273;
+  --dt-selection: #134e4a;
   --dt-selection-fg: #c9d1d9;
 }
 
