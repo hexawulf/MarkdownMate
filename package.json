@@ -96,6 +96,9 @@
     "katex": "$katex",
     "@tailwindcss/typography": {
       "postcss-selector-parser": "6.1.6"
+    },
+    "monaco-editor": {
+      "dompurify": "3.4.18"
     }
   }
 }
