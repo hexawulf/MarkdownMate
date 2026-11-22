@@ -9,7 +9,9 @@
 // via rehype-prism, not in the Monaco editor. The editor only needs basic
 // text editing capabilities, not full IDE language services.
 
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+// monaco-editor 0.56+ has an exports map ("./*" -> "./esm/vs/*.js"), so the
+// worker is addressed without the old esm/vs/ prefix.
+import editorWorker from 'monaco-editor/editor/editor.worker?worker';
 
 self.MonacoEnvironment = {
   getWorker(_workerId: string, _label: string) {
