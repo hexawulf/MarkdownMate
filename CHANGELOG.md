@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-11-22
+
+### Changed
+- Build on **Vite 8** (Rolldown) with `@vitejs/plugin-react` 6.3, esbuild 0.28 and tsx 4.23 (#68).
+- **Monaco 0.57**: 0.56 added an `exports` map (`./*` → `./esm/vs/*.js`), so the editor worker is now imported as `monaco-editor/editor/editor.worker?worker`; the old deep path left the app on "Loading…" (#70).
+- Dependency updates: helmet 8.3, winston 3.19, radix-ui, wouter 3.13, zustand 5.1, idb 8.0.4, date-fns 4, lucide-react 1.x, Playwright 1.65.1 and others (#63, #65, #66, #70).
+
+### Security
+- DOMPurify bundled by Monaco overridden 3.4.15 → **3.4.18** (five low-severity advisories; Monaco ships in the client) (#71). `npm audit`: 0.
+
 ## [3.4.0] - 2026-11-19
 
 ### Added
