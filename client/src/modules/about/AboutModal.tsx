@@ -69,13 +69,13 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
 
           {/* What's new */}
           <section>
-            <h3 className="font-semibold mb-2">What&apos;s new in 3.4</h3>
+            <h3 className="font-semibold mb-2">What&apos;s new in 3.5</h3>
             <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• <strong>Vite 8 &amp; Monaco 0.57</strong> — faster production builds and updated editor runtime</li>
               <li>• <strong>Sync scroll</strong> — in Split view the preview follows the editor line by line, and back (toggle in Settings)</li>
-              <li>• <strong>Works on phones</strong> — the document list opens as a panel from the header</li>
+              <li>• <strong>Works on phones</strong> — the document list opens as a slide-over panel from the header</li>
               <li>• <strong>Sidebar stays in sync</strong> — documents created, renamed or deleted in another tab show up without a reload</li>
-              <li>• <strong>KaTeX 0.19</strong> — the latest math renderer, with its security fixes</li>
-              <li>• <strong>Tested in a real browser</strong> — every change now runs a browser smoke test before release</li>
+              <li>• <strong>KaTeX 0.19 &amp; hardened deps</strong> — updated math renderer and 0 production audit findings</li>
             </ul>
           </section>
 
@@ -125,22 +125,18 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
           {/* Keyboard Shortcuts */}
           <section>
             <h3 className="font-semibold mb-3">Keyboard Shortcuts</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-muted-foreground">Save</span>
                 <kbd className="px-2 py-1 text-xs bg-muted rounded">Ctrl+S</kbd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-muted-foreground">Export</span>
                 <kbd className="px-2 py-1 text-xs bg-muted rounded">Ctrl+E</kbd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-muted-foreground">Help</span>
                 <kbd className="px-2 py-1 text-xs bg-muted rounded">Ctrl+/</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">New Document</span>
-                <kbd className="px-2 py-1 text-xs bg-muted rounded">Ctrl+N</kbd>
               </div>
             </div>
           </section>

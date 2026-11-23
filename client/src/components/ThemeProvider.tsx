@@ -16,16 +16,30 @@ interface ThemeProviderProps {
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
-  if (theme === "dark") {
-    root.classList.add("dark");
-  } else {
-    root.classList.remove("dark");
+  root.classList.toggle("dark", theme === "dark");
+  root.classList.toggle("light", theme === "light");
+}
+
+function readSavedTheme(): Theme | null {
+  try {
+    const saved = localStorage.getItem("theme");
+    return saved === "dark" || saved === "light" ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedTheme(theme: Theme): void {
+  try {
+    localStorage.setItem("theme", theme);
+  } catch {
+    // Ignore: blocked/private storage just means the preference is not persisted.
   }
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const getInitialTheme = (): Theme => {
-    const saved = localStorage.getItem("theme") as Theme | null;
+    const saved = readSavedTheme();
     if (saved) return saved;
     const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
     return prefersDark ? "dark" : "light";
@@ -34,18 +48,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
-    // Apply theme to document and persist to localStorage
     applyTheme(theme);
-    localStorage.setItem("theme", theme);
   }, [theme]);
 
   useEffect(() => {
-    // Listen for system theme changes if user hasn't set a preference
+    // Listen for system theme changes if user hasn't explicitly set a preference
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = (e: MediaQueryListEvent) => {
-      // Only auto-update if user hasn't explicitly set a theme
-      const saved = localStorage.getItem("theme");
-      if (!saved) {
+      if (!readSavedTheme()) {
         setThemeState(e.matches ? "dark" : "light");
       }
     };
@@ -54,10 +64,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }, []);
 
   const toggleTheme = () => {
-    setThemeState(prev => (prev === "dark" ? "light" : "dark"));
+    setThemeState((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      writeSavedTheme(next);
+      return next;
+    });
   };
 
   const setTheme = (newTheme: Theme) => {
+    writeSavedTheme(newTheme);
     setThemeState(newTheme);
   };
 

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { Download, Settings, Moon, Sun, HelpCircle, Info, PanelLeft, Code, Eye, Columns } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/use-toast';
 import { formatShortcut } from '@/hooks/useKeyboardShortcuts';
 import { AboutModal } from '@/modules/about';
 
@@ -77,6 +78,7 @@ export default function Editor() {
   const [externalChange, setExternalChange] = useState(false);
   
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
 
   const handleSelectDocument = useCallback((doc: Document) => {
     // MM-07: selecting the document that is already open is a no-op, so a
@@ -231,10 +233,18 @@ export default function Editor() {
   }, [currentDocument, content]);
 
   const handleExportHtml = useCallback(async () => {
-    if (currentDocument) {
+    if (!currentDocument) return;
+    try {
       await exportAsHtml(currentDocument.title, content);
+    } catch (error) {
+      console.error('HTML export failed:', error);
+      toast({
+        title: 'Could not export HTML',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
     }
-  }, [currentDocument, content]);
+  }, [currentDocument, content, toast]);
 
   const handleExportPdf = useCallback(() => {
     exportAsPdf();
@@ -255,8 +265,13 @@ export default function Editor() {
       await exportAllDocuments(documents);
     } catch (error) {
       console.error('Export all failed:', error);
+      toast({
+        title: 'Could not export backup',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
     }
-  }, [documents]);
+  }, [documents, toast]);
 
   const importInputRef = useRef<HTMLInputElement>(null);
   const handleImportClick = useCallback(() => {
@@ -268,18 +283,33 @@ export default function Editor() {
     if (!files || files.length === 0) return;
     try {
       const imported = await readImportFiles(files);
+      if (imported.length === 0) {
+        toast({
+          title: 'No documents imported',
+          description: 'Select one or more .md files or a MarkdownMate .zip backup.',
+        });
+        return;
+      }
       let last: Document | null = null;
       for (const doc of imported) {
         // Imported documents are always new; they never overwrite existing ones.
         last = await createDocument(doc.title || 'Untitled Document', doc.content);
       }
       if (last) handleSelectDocument(last);
+      toast({
+        title: `Imported ${imported.length} ${imported.length === 1 ? 'document' : 'documents'}`,
+      });
     } catch (error) {
       console.error('Import failed:', error);
+      toast({
+        title: 'Import failed',
+        description: 'Check that the selected file is a valid .md or .zip backup.',
+        variant: 'destructive',
+      });
     } finally {
       event.target.value = '';
     }
-  }, [createDocument, handleSelectDocument]);
+  }, [createDocument, handleSelectDocument, toast]);
 
   // Keyboard shortcuts
   const shortcuts = createEditorShortcuts({
