@@ -16,12 +16,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:live": "MARKDOWNMATE_BASE_URL=https://markdownmate.org playwright test --grep @live",
-    "metrics:build": "node scripts/measure-build.js",
-    "metrics:monaco": "node scripts/analyze-monaco.js",
-    "metrics:preview": "node scripts/measure-preview.js",
-    "metrics:idb": "node scripts/measure-idb.js",
-    "metrics:all": "npm run metrics:build && npm run metrics:monaco && npm run metrics:preview && npm run metrics:idb"
+    "test:e2e:live": "MARKDOWNMATE_BASE_URL=https://markdownmate.org playwright test --grep @live"
   },
   "dependencies": {
     "dotenv": "^16.5.0",

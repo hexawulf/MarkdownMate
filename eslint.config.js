@@ -9,9 +9,6 @@ export default tseslint.config(
       "dist/**",
       "node_modules/**",
       "coverage/**",
-      // Legacy one-off measurement scripts, not part of the app or its build.
-      "scripts/**",
-      "!scripts/clean-dist.js",
     ],
   },
   js.configs.recommended,

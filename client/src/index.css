@@ -165,31 +165,3 @@
     background: var(--dt-ink-muted);
   }
 }
-
-@layer components {
-  .editor-cursor {
-    animation: blink 1s infinite;
-  }
-
-  .presence-indicator {
-    animation: pulse 2s infinite;
-  }
-
-  .sidebar-enter {
-    animation: slideIn 0.3s ease-out;
-  }
-
-  .prose-editor {
-    @apply prose dark:prose-invert max-w-none;
-  }
-}
-
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-@keyframes slideIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
