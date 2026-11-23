@@ -4,7 +4,7 @@ MarkdownMate v2.0+ is designed for self-hosted deployment. All instructions assu
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 22+ and npm
 - Linux server with systemd or PM2
 - Nginx (recommended) or Apache for reverse proxy
 - (Optional) Domain name and SSL certificate
@@ -13,7 +13,7 @@ MarkdownMate v2.0+ is designed for self-hosted deployment. All instructions assu
 
 1. **Install dependencies:**
    ```bash
-   npm install
+   npm ci
    ```
 
 2. **Build the application:**
@@ -22,15 +22,15 @@ MarkdownMate v2.0+ is designed for self-hosted deployment. All instructions assu
    ```
 
    This creates a `dist/` directory containing:
-   - Static client files (HTML, CSS, JS, assets)
-   - Compiled server file (`index.js`)
+   - `dist/public/` — static client files (HTML, CSS, JS, fonts, icons)
+   - `dist/index.js` — compiled Express server bundle (never served publicly)
 
 3. **Test the build locally:**
    ```bash
    npm start
    ```
    
-   Visit `http://localhost:5004` to verify the build works.
+   Visit `http://localhost:5004` to verify the build works (`GET /api/health` returns `{"status":"ok",...}`).
 
 ## Deployment Options
 
@@ -43,17 +43,17 @@ PM2 is a production process manager for Node.js applications.
    sudo npm install -g pm2
    ```
 
-2. **The included `ecosystem.config.cjs` is already configured:**
+2. **The included `ecosystem.config.cjs` runs `dist/index.js` directly:**
    ```javascript
    module.exports = {
      apps: [{
        name: 'markdownmate',
-       script: 'npm',
-       args: 'start',
+       script: 'dist/index.js',
        env_file: '.env',
        env: {
          PORT: 5004,
-         NODE_ENV: 'production'
+         NODE_ENV: 'production',
+         LOG_FILE: '/home/zk/logs/markdownmate.log'
        },
        watch: false,
        instances: 1,
@@ -109,6 +109,8 @@ sudo systemctl status markdownmate
 
 ## Nginx Reverse Proxy
 
+> **Important (security and cache headers):** The Express app sends all security headers via `helmet` (`Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, `Referrer-Policy`, `X-XSS-Protection: 0`) and its own `Cache-Control` headers (`immutable, max-age=31536000` on hashed `/assets/*`, `no-cache` on `index.html`). **Do not add `add_header` security headers or static cache overrides in Nginx**, or responses will carry duplicate/conflicting headers.
+
 ### Basic Configuration
 
 Create `/etc/nginx/sites-available/markdownmate`:
@@ -122,20 +124,10 @@ server {
     location / {
         proxy_pass http://127.0.0.1:5004;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Static assets caching
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        proxy_pass http://127.0.0.1:5004;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
     }
 }
 ```
@@ -183,31 +175,14 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-
-    # Proxy to Node.js app
+    # Proxy to Node.js app (helmet owns security headers; static.ts owns Cache-Control)
     location / {
         proxy_pass http://127.0.0.1:5004;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Static assets caching
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        proxy_pass http://127.0.0.1:5004;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
     }
 }
 ```
@@ -216,12 +191,12 @@ server {
 
 1. **Pull latest changes:**
    ```bash
-   git pull origin main
+   git pull --ff-only origin main
    ```
 
-2. **Install dependencies (if changed):**
+2. **Install dependencies:**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Rebuild:**
@@ -274,7 +249,7 @@ sudo kill <PID>
 
 2. Verify Node.js version:
    ```bash
-   node --version  # Should be 18+
+   node --version  # Should be 22+
    ```
 
 3. Check environment:
@@ -300,7 +275,7 @@ sudo tail -f /var/log/nginx/error.log
 - [ ] Firewall configured (allow only 22, 80, 443)
 - [ ] SSL certificate installed and auto-renewal enabled
 - [ ] Application runs as non-root user
-- [ ] Security headers configured in Nginx
+- [ ] Security headers served once by the app (`helmet`), not duplicated in Nginx
 - [ ] Regular system updates scheduled
 - [ ] Backups configured (though data is client-side in IndexedDB)
 - [ ] Fail2ban or similar intrusion prevention installed

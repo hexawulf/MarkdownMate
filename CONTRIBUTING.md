@@ -5,8 +5,8 @@ Thank you for your interest in contributing to MarkdownMate! This document provi
 ## Development Setup
 
 ### Prerequisites
-- Node.js 18.0.0 or higher
-- npm 8.0.0 or higher
+- Node.js 22.0.0 or higher
+- npm 10.0.0 or higher
 - Git
 
 ### Getting Started
@@ -33,15 +33,15 @@ Thank you for your interest in contributing to MarkdownMate! This document provi
 ```
 MarkdownMate/
 ├── client/src/
-│   ├── components/     # React components
-│   ├── pages/          # Page components
-│   ├── hooks/          # Custom hooks
-│   ├── lib/            # Utility functions
-│   ├── stores/         # State management
-│   └── types/          # TypeScript definitions
-├── server/             # Backend API
-├── shared/             # Shared types and schemas
-└── .github/workflows/  # CI/CD configuration
+│   ├── components/     # React components (sidebar, theme, shadcn/ui)
+│   ├── modules/        # Editor panes, status bar, About modal
+│   ├── pages/          # Page components (Editor, NotFound)
+│   ├── hooks/          # Custom hooks (autosave, sync scroll, shortcuts, toast)
+│   ├── lib/            # Markdown pipeline, export, zip backup, utilities
+│   └── stores/         # Zustand store backed by IndexedDB (markdownmate-db v2)
+├── server/             # Static file server, helmet CSP, /api/health
+├── tests/e2e/          # Playwright smoke and header tests
+└── .github/workflows/  # CI configuration
 ```
 
 ## Code Standards
@@ -92,7 +92,7 @@ type(scope): description
 
 ### Examples
 ```bash
-feat(editor): add real-time collaboration
+feat(editor): add sync scroll toggle
 fix(ui): resolve mobile navigation issue
 docs(readme): update installation instructions
 ```
@@ -108,8 +108,11 @@ docs(readme): update installation instructions
 
 3. Test your changes thoroughly:
    ```bash
-   npm run check  # TypeScript checking
-   npm run build  # Build verification
+   npm run check     # TypeScript checking
+   npm run lint      # ESLint
+   npm test          # Vitest unit tests
+   npm run build     # Production build
+   npm run test:e2e  # Playwright browser smoke tests
    ```
 
 4. Commit your changes with meaningful commit messages

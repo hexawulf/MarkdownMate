@@ -45,8 +45,7 @@ client/src/
     which persists to IndexedDB in a single `readwrite` transaction and posts to a
     `BroadcastChannel('markdownmate')` so other tabs stay in sync.
   - Editor-local state (content, view mode, dialogs) lives in `Editor.tsx`.
-- React Query is set up (`lib/queryClient.ts`) but there is no server data to
-  fetch; do not add document APIs.
+- There are no server document APIs; do not add them.
 
 ## Testing
 

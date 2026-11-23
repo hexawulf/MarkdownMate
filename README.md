@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node 22+" />
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite 7" />
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite 8" />
   <a href="https://github.com/hexawulf/MarkdownMate/actions"><img src="https://github.com/hexawulf/MarkdownMate/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
 </div>
@@ -129,7 +129,6 @@ Configuration is small. Copy `.env.example` to `.env` if you want to change it (
 | `npm run lint`          | ESLint                                                    |
 | `npm run lint:fix`      | ESLint with automatic fixes                               |
 | `npm run typecheck`     | TypeScript check (`tsc --noEmit`)                         |
-| `npm run metrics:all`   | Measure bundle, Monaco, preview and IndexedDB performance |
 
 CI (GitHub Actions, Node 22) runs type check, lint, unit tests, build and the
 Playwright browser smoke test on pushes to `main` and on pull requests.
@@ -234,7 +233,7 @@ Get a certificate with `sudo certbot --nginx -d markdown.example.com`.
 
 ## Tech stack
 
-- **Frontend:** React 18, TypeScript 5, Vite 7, Tailwind CSS 3, Radix UI (shadcn/ui style), Lucide icons, Wouter
+- **Frontend:** React 18, TypeScript 5, Vite 8, Tailwind CSS 3, Radix UI (shadcn/ui style), Lucide icons, Wouter
 - **Editor:** Monaco Editor (ESM build, local workers)
 - **State and storage:** Zustand, IndexedDB via `idb`, `BroadcastChannel` for tab sync
 - **Markdown:** unified, remark-parse, remark-gfm, remark-math, remark-rehype, rehype-katex, rehype-prism-plus, rehype-sanitize, rehype-stringify

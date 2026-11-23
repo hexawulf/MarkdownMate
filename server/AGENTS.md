@@ -36,7 +36,7 @@ server/
   `NODE_ENV === 'development'` and fails closed to strict `script-src 'self'`
   otherwise (`server/app.test.ts` guards this). Change it only with a reason.
 - Routes: `GET /api/health` returns `{ status: "ok" }`. Unknown non-asset paths
-  fall back to the SPA; unknown API paths return a JSON 404.
+  fall back to the SPA with status 404; unknown API paths return a 404 (never the SPA shell).
 - Production is started by pm2 from `ecosystem.config.cjs`, which runs
   `dist/index.js` directly (not `npm start`) with `PORT=5004` and `LOG_FILE`.
 
