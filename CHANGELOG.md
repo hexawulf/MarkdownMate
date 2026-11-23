@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.1] - 2026-11-23
+
+### Added
+- Teal `MM` favicons (`favicon.svg`, `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`) tracked in `client/public/` and unified teal accent highlights (`#14B8A6` / `#0D9488`) across CSS tokens, Monaco themes, and HTML export (`055f4fb`, `5e8fbf3`).
+
+### Fixed
+- **Dark-mode contrast:** fixed inverted active-tab text contrast on the view-mode switcher (`--secondary-foreground`) and improved dark primary button contrast (`--primary-foreground`), plus teal accent styling on the font-size slider.
+- **Desktop & mobile layout:** merged the `[Editor | Split | Preview]` toggle into the top header on desktop (reclaiming ~52 px vertically), stopped `"MarkdownMate"` from truncating on 390 px phones, collapsed the mobile status bar to a single line, defaulted `< 768 px` to Editor view while keeping Split selectable, added responsive preview padding and mobile modal margins, and made sidebar row action buttons visible on touch screens.
+- **Print to PDF:** hid app chrome (header, sidebar, status bar, Monaco pane) when printing, reset print container overflow/height, and added ink-friendly light code-block print styles.
+- **Preview & UX polish:** removed stray bullets next to GFM task-list checkboxes, replaced leftover sepia prose pre tokens, replaced 404 dev boilerplate with user copy and a `"Back to editor"` link, synced the About modal (`What's new in 3.5` and shortcuts list), guarded `ThemeProvider` `localStorage` access, and added error/success toasts for export and import.
+
+### Removed
+- Removed unrelated leftover stylesheets (`styles.css`, `theme.css`), unused `resizable.tsx` UI primitive, dead v1 collaboration CSS rules, and 5 broken legacy measurement scripts under `scripts/`.
+
+### Documentation
+- Aligned `DEPLOYMENT.md` (Node 22+, `dist/public`, direct `dist/index.js` pm2 config, removed duplicate nginx security/cache headers per MM-09), `README.md` (Vite 8), `SECURITY.md` (`3.5.x`), `CONTRIBUTING.md`, `client/AGENTS.md`, and `server/AGENTS.md` with the current app.
+
 ## [3.5.0] - 2026-11-22
 
 ### Changed
