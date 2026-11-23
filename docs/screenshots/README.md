@@ -4,7 +4,7 @@ Images used by the main [README](../../README.md).
 
 | File                   | Shows                                                                 |
 | ---------------------- | --------------------------------------------------------------------- |
-| `editor-interface.png` | Split view (v3.2.0): sidebar, Monaco editor, rendered preview         |
+| `editor-interface.png` | Split view (v3.5.1, teal accent): sidebar, Monaco editor, preview     |
 
 ## Retaking `editor-interface.png`
 
