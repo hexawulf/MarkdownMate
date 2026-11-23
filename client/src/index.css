@@ -70,9 +70,9 @@
   --border: 48 54 61; /* #30363d - subtle dark border */
   --input: 48 54 61; /* #30363d */
   --primary: 20 184 166; /* #14b8a6 - teal-500 */
-  --primary-foreground: 255 255 255; /* #ffffff */
+  --primary-foreground: 13 17 23; /* #0d1117 - high contrast on teal-500 */
   --secondary: 22 27 34; /* #161b22 */
-  --secondary-foreground: 139 148 158; /* #8b949e */
+  --secondary-foreground: 201 209 217; /* #c9d1d9 */
   --accent: 33 38 45; /* #21262d - hover */
   --accent-foreground: 201 209 217; /* #c9d1d9 */
   --destructive: 248 81 73; /* #f85149 - red */
@@ -82,7 +82,7 @@
   --sidebar-background: 22 27 34; /* #161b22 */
   --sidebar-foreground: 201 209 217; /* #c9d1d9 */
   --sidebar-primary: 20 184 166; /* #14b8a6 */
-  --sidebar-primary-foreground: 255 255 255; /* #ffffff */
+  --sidebar-primary-foreground: 13 17 23; /* #0d1117 */
   --sidebar-accent: 33 38 45; /* #21262d */
   --sidebar-accent-foreground: 201 209 217; /* #c9d1d9 */
   --sidebar-border: 48 54 61; /* #30363d */
@@ -163,5 +163,24 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--dt-ink-muted);
+  }
+}
+
+@layer components {
+  .prose ul.contains-task-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .prose li.task-list-item {
+    padding-left: 0;
+  }
+
+  .prose li.task-list-item > input[type="checkbox"] {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 0.5rem;
+    accent-color: rgb(var(--primary));
+    vertical-align: middle;
   }
 }

@@ -46,7 +46,7 @@ export function DocumentsSidebar({
   onCreateDocument,
   onBeforeMutate,
 }: DocumentsSidebarProps) {
-  const { documents, trash, searchDocuments, duplicateDocument, softDeleteDocument, restoreDocument, deleteDocument, emptyTrash, loadTrash } = useDocumentsStore();
+  const { documents, trash, searchDocuments, duplicateDocument, softDeleteDocument, restoreDocument, deleteDocument, emptyTrash, loadTrash, updateDocument } = useDocumentsStore();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -124,8 +124,6 @@ export function DocumentsSidebar({
     setRenameId(doc.id);
     setRenameValue(doc.title);
   };
-
-  const { updateDocument } = useDocumentsStore();
 
   const handleRename = async (id: string) => {
     if (renameValue.trim()) {
@@ -216,7 +214,8 @@ export function DocumentsSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={`Actions for ${doc.title}`}
+                      className="h-8 w-8 p-0 opacity-70 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity"
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>

@@ -26,33 +26,33 @@ export function StatusBar({
   }, [lastSaved]);
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 text-sm border-t bg-muted/30">
-      <div className="flex items-center gap-4">
-        <span className="font-medium truncate max-w-xs" title={documentTitle}>
+    <footer className="no-print print:hidden flex items-center justify-between gap-3 px-3 sm:px-4 py-1.5 text-xs border-t bg-muted/30">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="font-medium truncate" title={documentTitle}>
           {documentTitle}
         </span>
         {hasUnsavedChanges && (
-          <span className="flex items-center gap-1 text-primary">
+          <span className="flex items-center gap-1 text-primary shrink-0">
             <Circle className="h-2 w-2 fill-current" />
             Unsaved
           </span>
         )}
       </div>
       
-      <div className="flex items-center gap-6 text-muted-foreground">
+      <div className="flex items-center gap-3 sm:gap-5 text-muted-foreground shrink-0 whitespace-nowrap">
         <span title="Word count">
           {stats.words} {stats.words === 1 ? 'word' : 'words'}
         </span>
-        <span title="Character count">
+        <span className="hidden sm:inline" title="Character count">
           {stats.characters} {stats.characters === 1 ? 'char' : 'chars'}
         </span>
-        <span title="Cursor position">
+        <span className="hidden md:inline" title="Cursor position">
           Ln {cursorPosition.line}, Col {cursorPosition.column}
         </span>
-        <span className="text-xs" title={lastSaved ? new Date(lastSaved).toLocaleString() : 'Never saved'}>
+        <span title={lastSaved ? new Date(lastSaved).toLocaleString() : 'Never saved'}>
           {lastSavedText}
         </span>
       </div>
-    </div>
+    </footer>
   );
 }
