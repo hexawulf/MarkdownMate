@@ -45,7 +45,7 @@ export function serveStatic(app: Express, publicDir: string) {
     res.status(404).type("text/plain").send("Not found");
   });
 
-  // Everything else in the build output (icons, robots.txt, ...).
+  // Everything else in the build output (icons, robots.txt, sitemap.xml, ...).
   app.use(
     express.static(publicDir, {
       index: false,

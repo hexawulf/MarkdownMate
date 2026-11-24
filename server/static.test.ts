@@ -21,7 +21,11 @@ beforeAll(async () => {
   fs.writeFileSync(path.join(tmpDir, "index.js"), "// server bundle, must never be served");
   fs.writeFileSync(path.join(publicDir, "index.html"), SHELL);
   fs.writeFileSync(path.join(publicDir, "assets", "index-abc123.js"), "console.log('app')");
-  fs.writeFileSync(path.join(publicDir, "robots.txt"), "User-agent: *\n");
+  fs.writeFileSync(path.join(publicDir, "robots.txt"), "User-agent: *\nAllow: /\n\nSitemap: https://markdownmate.org/sitemap.xml\n");
+  fs.writeFileSync(
+    path.join(publicDir, "sitemap.xml"),
+    '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://markdownmate.org/</loc>\n  </url>\n</urlset>\n',
+  );
 
   const app = createApp();
   serveStatic(app, publicDir);
@@ -68,6 +72,16 @@ describe("production static server", () => {
 
     const robots = await fetch(`${baseUrl}/robots.txt`);
     expect(robots.status).toBe(200);
+    expect(robots.headers.get("content-type")).toContain("text/plain");
+
+    // A missing sitemap used to fall through to the SPA shell (404 HTML).
+    const sitemap = await fetch(`${baseUrl}/sitemap.xml`);
+    expect(sitemap.status).toBe(200);
+    expect(sitemap.headers.get("content-type")).toMatch(/xml/);
+    expect(sitemap.headers.get("content-type")).not.toContain("html");
+    const sitemapBody = await sitemap.text();
+    expect(sitemapBody).toContain("<loc>https://markdownmate.org/</loc>");
+    expect(sitemapBody).not.toContain('id="root"');
   });
 
   it("answers a missing asset with a plain 404 instead of the HTML shell", async () => {
@@ -117,6 +131,30 @@ describe("production static server", () => {
     expect(csp).not.toMatch(/img-src[^;]*\bhttp:(?!\/)/); // no bare http: token
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
     expect(res.headers.get("x-powered-by")).toBeNull();
+  });
+});
+
+describe("crawl files shipped with the client", () => {
+  const publicDir = path.resolve(__dirname, "..", "client", "public");
+
+  it("ships an XML sitemap for the homepage", () => {
+    const xml = fs.readFileSync(path.join(publicDir, "sitemap.xml"), "utf-8");
+    expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+    expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    expect(xml).toContain("<loc>https://markdownmate.org/</loc>");
+  });
+
+  it("points robots.txt at that sitemap", () => {
+    const robots = fs.readFileSync(path.join(publicDir, "robots.txt"), "utf-8");
+    expect(robots).toContain("Sitemap: https://markdownmate.org/sitemap.xml");
+  });
+
+  it("keeps the homepage description and adds a canonical link", () => {
+    const html = fs.readFileSync(path.resolve(__dirname, "..", "client", "index.html"), "utf-8");
+    expect(html).toContain('<link rel="canonical" href="https://markdownmate.org/" />');
+    expect(html).toContain(
+      'content="A local-first Markdown editor with live preview, math and code highlighting. Your documents stay in your browser."',
+    );
   });
 });
 
