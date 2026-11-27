@@ -259,10 +259,11 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
 
       set(state => {
         // MM-08: a just-updated document moves to the top of the list, matching
-        // the by-updatedAt order the sidebar is meant to show.
+        // the by-updatedAt order the sidebar is meant to show. A trashed one
+        // (e.g. the autosave flushed after deleting the open document) stays out.
         const others = state.documents.filter(d => d.id !== id);
         return {
-          documents: [updatedDoc, ...others],
+          documents: updatedDoc.isDeleted ? others : [updatedDoc, ...others],
           currentDocument: state.currentDocument?.id === id ? updatedDoc : state.currentDocument,
         };
       });
