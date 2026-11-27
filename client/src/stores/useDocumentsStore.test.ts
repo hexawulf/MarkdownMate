@@ -82,3 +82,18 @@ describe("MM-08: an updated document moves to the top of the list", () => {
     expect(useDocumentsStore.getState().documents[0].id).toBe(a.id);
   });
 });
+
+describe("updateDocument on a trashed document", () => {
+  it("keeps it out of the active list (pending autosave flushed after a delete)", async () => {
+    const store = useDocumentsStore.getState();
+    const doc = await store.createDocument("Doomed", "draft");
+    await store.softDeleteDocument(doc.id);
+
+    await useDocumentsStore.getState().updateDocument(doc.id, { content: "draft + last edit" });
+
+    expect(useDocumentsStore.getState().documents.some((d) => d.id === doc.id)).toBe(false);
+    const fresh = await useDocumentsStore.getState().getDocument(doc.id);
+    expect(fresh?.isDeleted).toBe(true);
+    expect(fresh?.content).toBe("draft + last edit");
+  });
+});
